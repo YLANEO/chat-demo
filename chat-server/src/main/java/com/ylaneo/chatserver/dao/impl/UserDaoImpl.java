@@ -1,5 +1,6 @@
 package com.ylaneo.chatserver.dao.impl;
 
+import com.mysql.cj.jdbc.ClientPreparedStatement;
 import com.ylaneo.chatserver.dao.UserDao;
 import com.ylaneo.chatserver.dto.RegisterDto;
 import com.ylaneo.chatserver.entity.Result;
@@ -63,16 +64,10 @@ public class UserDaoImpl implements UserDao {
         String username=registerDto.getUsername();
         String password=registerDto.getPassword();
         String rePassword=registerDto.getRePassword();
-        Integer role=registerDto.getRole();
 
-        /*mybatis用多了导致的
-        String sql1="insert into user (username,password,role) values(#{username},#{password},#{role})";*/
         //原生的jdbc要用问号进行占位
         //关于username唯一性检查直接交给数据库进行，因为建表的时候为username属性指定了unique
-        String sql1="insert into user (username,password,role) values(?,?,?)";
-
-        /*查询所有username的语句，用于检查username是否重复
-        String sql2="select username from user where username=?";*/
+        String sql1="insert into user (username,password) values(?,?)";
 
         //检查两次输入的密码是否一致
         //if(password!=rePassword){  比较的是引用地址，不是字符串内容，永远返回 true。应该用 equals()。
@@ -86,8 +81,6 @@ public class UserDaoImpl implements UserDao {
             //填入对应的数据
             pt.setString(1,username);
             pt.setString(2,password);
-            //这里报错：为什么要求需要使用String类型？数据库中不是tinyint类型吗
-            pt.setInt(3,role);
             //执行sql语句并处理查询到的数据
             int rows=pt.executeUpdate();
             if(rows>0){
@@ -125,7 +118,8 @@ public class UserDaoImpl implements UserDao {
                     //为user实例赋值
                     user.setUserid(resultSet.getInt("id"));
                     user.setUsername(resultSet.getString("username"));
-                    user.setRole(resultSet.getInt("role"));
+                    user.setNickname(resultSet.getString("nickname"));
+                    user.setAvatar_url(resultSet.getString("avatar_url"));
                     //
                     Result<User>result=new Result();
                     System.out.println("登录成功");
@@ -183,6 +177,27 @@ public class UserDaoImpl implements UserDao {
                 return result.success(user);
             }else {
                 return result.error("查询失败");
+            }
+        }catch (SQLException e){
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public Result updateUserStatus(Integer userId,Integer userStatus) {
+        String sql="update user set status=? where id=?";
+        try(Connection conn=new DBConnection().getConnection();
+            PreparedStatement pt=conn.prepareStatement(sql);){
+            //
+            pt.setInt(1,userStatus);
+            pt.setInt(2,userId);
+            //
+            Result result=new Result<>();
+            int row=pt.executeUpdate();
+            if(row!=0){
+                return result.success("修改成功");
+            }else {
+                return result.error("修改失败");
             }
         }catch (SQLException e){
             return Result.error(e.getMessage());

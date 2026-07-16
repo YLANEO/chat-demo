@@ -44,40 +44,6 @@ public class ServerThread extends Thread {
 
     // ======================================== 数据库操作代码 & socket读取和发送代码 ========================================
 
-    //登录操作:接受client的用户名和密码，调用dao的login接口，使用socket发送
-    /*public void login() throws IOException {
-        byte[]buffer=new byte[65535];
-        //接受client的数据
-        is=socket.getInputStream();
-        int len=is.read(buffer);
-        //解析前的预处理
-        String request=new String(buffer,0,len);//获取实际的数据
-        System.out.println("收到一条长度为" + len + "的信息：" + new String(buffer,0,len));//打印接收到的数据
-        String response="";
-        //解析client的数据并调用dao的接口
-        if( request.startsWith("<login>") ){//检查收到的数据的前后缀确认请求类型
-            //调用工具类中的方法解析出每个参数，将每个参数按照顺序放入params列表中
-            List<String>params=requestHandler.handleLogin(request);
-            UserDao userDao=new UserDaoImpl();
-            String username=params.get(1);//注意这里不是0，而是1，因为0位置是操作类型
-            String password=params.get(2);
-            Result<User> r1=userDao.login(username,password);
-            User user=r1.getData();//使用一个对象接受返回的数据
-            //int id=user.getUserid();
-            //int role=user.getRole();
-            //在组装reseponse之前先判断操作是否成功，不然data里的user对象没有数据，使用get方法会报错
-            if(r1.getCode()==0){
-                response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+user.getUserid()+">"+"<"+user.getUsername()+">"+"<"+user.getRole()+">";//按照顺序放入响应代码，响应信息，用户id，用户名，用户角色代码
-            }else{
-                response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">";
-            }
-
-        }
-        //发送数据回client
-        os=socket.getOutputStream();
-        os.write(response.getBytes());//必须要调用getBytes方法进行数据流的回传
-    }*/
-
     //使用if-else根据请求的开始部分决定调用service层中的哪个接口
     public void dispatch() throws IOException {
         byte[]buffer=new byte[65535];
@@ -105,6 +71,9 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<getUsername>")) {
             UserService userService=new UserServiceImpl();
             response=userService.getUsername(request);
+        } else if (request.startsWith("<updateUserStatus>")) {
+            UserService userService=new UserServiceImpl();
+            response=userService.updateUserStatus(request);
         } else {
             response="<1><非法请求>";
         }
@@ -114,7 +83,6 @@ public class ServerThread extends Thread {
     }
 
 
-    // ======================================== 不明？？？？ ========================================
     /**
      * 独立线程，开始干活
      */

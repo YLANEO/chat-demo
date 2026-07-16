@@ -12,7 +12,7 @@ public class RequestHandler {
 
     String request;//需要处理的数据流
 
-    public List<String> handleLogin(String request){//处理登录请求client传来的数据,并以List的方式进行数据的返回
+    public List<String> handleParams(String request){//处理登录请求client传来的数据,并以List的方式进行数据的返回
         String str = request;
         String[] strlist = str.split("<");//借助正则表达式，进行字符串的分割，为什么是String类型？？？不都是流式数据和byte类型的数组吗？？？
         List<String> params=new ArrayList<>();
@@ -29,7 +29,7 @@ public class RequestHandler {
 
     public static void main(String[] args) {//测试用的代码，可以删，暂时保留
         RequestHandler requestHandler=new RequestHandler();
-        List<String> params=requestHandler.handleLogin("<login><username><password>");
+        List<String> params=requestHandler.handleParams("<login><username><password>");
         System.out.println(params);
         for(int i=0;i<params.size();i++){
             System.out.println("params "+i+" is : "+params.get(i));

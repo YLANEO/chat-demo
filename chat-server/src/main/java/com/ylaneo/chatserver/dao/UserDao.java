@@ -16,4 +16,6 @@ public interface UserDao {
     Result updateUsername(Integer userId,String reUsername);
     //获得当前用户的username
     Result getUsername(Integer userId);
+    //修改在线状态
+    Result updateUserStatus(Integer userId,Integer userStatus);
 }

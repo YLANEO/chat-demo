@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class DBConnection {
 
     //进行数据库连接配置，可以加上final关键字，因为确认这几个变量不会更改了
-    private static  String url = "jdbc:mysql://localhost:3306/book_library?serverTimezone=UTC";
+    private static  String url = "jdbc:mysql://localhost:3306/chat_demo?serverTimezone=UTC";
     private static  String user = "root";
     private static  String password = "123456";
     private static  String driver = "com.mysql.cj.jdbc.Driver";

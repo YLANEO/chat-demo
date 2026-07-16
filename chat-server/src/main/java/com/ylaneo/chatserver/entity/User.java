@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-    private int userid;
+    private Integer userid;
     private String username;
     private String password;
-    private int role;
-
+    private String nickname;
+    private String avatar_url;
+    private Integer status;
 }

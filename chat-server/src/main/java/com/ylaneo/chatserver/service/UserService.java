@@ -11,4 +11,6 @@ public interface UserService {
     String updateUsername(String request);
     //根据id获取用户名（用户信息）
     String getUsername(String request);
+    //修改在线状态
+    String updateUserStatus(String request);
 }
