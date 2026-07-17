@@ -16,4 +16,10 @@ public interface UserFacade {
     Result<User> getUsername(Integer userId);
     //
     Result updateUserStatus(Integer userId,Integer userStatus);
+    //上传用户头像url
+    Result updateUserAvatar(Integer userId,String userAvatarUrl);
+    //更新昵称
+    Result updateNickname(Integer userId, String newNickname);
+    //获取用户信息
+    Result<User> getUserData(Integer userId);
 }

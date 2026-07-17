@@ -113,5 +113,40 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
+    @Override
+    public String updateUserAvatar(String request) {
+        List<String>params=requestHandler.handleParams(request);
+        Integer userId=Integer.valueOf(params.get(1));
+        String userAvatarUrl=params.get(2);
+        Result r=userDao.updateUserAvatar(userId,userAvatarUrl);
+        String response="<"+r.getCode()+">"+"<"+r.getMessage()+">";
+        return response;
+    }
+
+    @Override
+    public String updateNickname(String request) {
+        List<String>params=requestHandler.handleParams(request);
+        Integer userId=Integer.valueOf(params.get(1));
+        String userNickname=params.get(2);
+        Result r=userDao.updateNickname(userId,userNickname);
+        String response="<"+r.getCode()+">"+"<"+r.getMessage()+">";
+        return response;
+    }
+
+    @Override
+    public String getUserData(String request) {
+        List<String>params=requestHandler.handleParams(request);
+        Integer userId=Integer.valueOf(params.get(1));
+        Result<User> r1=userDao.getUserData(userId);
+        User user=r1.getData();
+        if(r1.getCode()==0){
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+user.getUsername()+">"+"<"+user.getNickname()+">"+"<"+user.getAvatar_url()+">"+"<"+user.getStatus()+">";//按照顺序放入响应代码，响应信息，用户id，用户名，用户角色代码
+            return response;
+        }else{
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">";
+            return response;
+        }
+    }
+
 
 }

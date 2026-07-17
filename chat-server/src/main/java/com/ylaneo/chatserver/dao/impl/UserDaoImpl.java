@@ -204,4 +204,77 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
+    @Override
+    public Result updateUserAvatar(Integer userId,String userAvatarUrl) {
+        String sql="update user set avatar_url=? where id=?";
+        try(Connection conn=new DBConnection().getConnection();
+            PreparedStatement pt=conn.prepareStatement(sql);){
+            //
+            pt.setString(1,userAvatarUrl);
+            pt.setInt(2,userId);
+            //
+            Result result=new Result<>();
+            int row=pt.executeUpdate();
+            if(row!=0){
+                return result.success("修改成功");
+            }else {
+                return result.error("修改失败");
+            }
+        }catch (SQLException e){
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public Result updateNickname(Integer userId, String newNickname) {
+        String sql="update user set nickname=? where id=?";
+        try(Connection conn=new DBConnection().getConnection();
+            PreparedStatement pt=conn.prepareStatement(sql);){
+            //
+            pt.setString(1,newNickname);
+            pt.setInt(2,userId);
+            //
+            Result result=new Result<>();
+            int row=pt.executeUpdate();
+            if(row!=0){
+                return result.success("修改成功");
+            }else {
+                return result.error("修改失败");
+            }
+        }catch (SQLException e){
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<User> getUserData(Integer userId) {
+        String sql="select * from user where id=?";
+        try(Connection conn=new DBConnection().getConnection();
+            PreparedStatement pt=conn.prepareStatement(sql) ){
+            pt.setInt(1,userId);
+            User user=new User();//创建一个User实例，传给登录页面进行用户信息状态管理
+            ResultSet resultSet =pt.executeQuery();
+            if(resultSet.next()){
+                //为user实例赋值
+                user.setUserid(resultSet.getInt("id"));
+                user.setUsername(resultSet.getString("username"));
+                user.setNickname(resultSet.getString("nickname"));
+                user.setAvatar_url(resultSet.getString("avatar_url"));
+                user.setStatus(resultSet.getInt("status"));
+                //
+                Result<User>result=new Result();
+                System.out.println("登录成功");
+                return result.success(user);//返回查找到的信息给
+            }
+            else{
+                return Result.error("用户不存在");
+            }
+        }
+        //异常处理
+        catch (SQLException e){
+            System.out.println("数据库操作错误"+e.getMessage());
+            return Result.error(e.getMessage());
+        }
+    }
+
 }

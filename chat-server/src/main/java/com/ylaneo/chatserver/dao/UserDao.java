@@ -18,4 +18,10 @@ public interface UserDao {
     Result getUsername(Integer userId);
     //修改在线状态
     Result updateUserStatus(Integer userId,Integer userStatus);
+    //修改用户头像
+    Result updateUserAvatar(Integer userId,String userAvatarUrl);
+    //更新昵称
+    Result updateNickname(Integer userId, String newNickname);
+    //获取用户信息
+    Result<User> getUserData(Integer userId);
 }

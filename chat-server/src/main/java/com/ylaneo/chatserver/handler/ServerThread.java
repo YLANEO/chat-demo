@@ -74,6 +74,15 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<updateUserStatus>")) {
             UserService userService=new UserServiceImpl();
             response=userService.updateUserStatus(request);
+        } else if (request.startsWith("<updateUserAvatar>")) {
+            UserService userService=new UserServiceImpl();
+            response=userService.updateUserAvatar(request);
+        } else if (request.startsWith("<updateNickname>")) {
+            UserService userService=new UserServiceImpl();
+            response=userService.updateNickname(request);
+        } else if (request.startsWith("<getUserData>")) {
+            UserService userService=new UserServiceImpl();
+            response=userService.getUserData(request);
         } else {
             response="<1><非法请求>";
         }

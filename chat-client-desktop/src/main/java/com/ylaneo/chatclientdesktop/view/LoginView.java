@@ -109,6 +109,7 @@ public class LoginView extends JFrame {
                 User user=new User();
                 user.setUserid(u.getUserid());
                 user.setUsername(username);
+                user.setStatus(1);
                 //单例模式
                 UserSession.getInstance().login(user);
                 //切换用户在线状态

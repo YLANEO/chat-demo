@@ -145,4 +145,78 @@ public class UserFacadeImpl implements UserFacade {
             return Result.error(message);
         }
     }
+
+    @Override
+    public Result updateUserAvatar(Integer userId,String userAvatarUrl) {
+        String request="<updateUserAvatar>"+"<"+userId+">"+"<"+userAvatarUrl+">";
+        String response;//用于接收数据
+        try {
+            response= requestSender.sendRequest(request);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        //将String转换为列表形式
+        List<String> r=responseHandler.handleParams(response);
+        //
+        int code=Integer.valueOf(r.get(0));
+        String message=r.get(1);
+        //
+        if(code==0){
+            return Result.success("上传成功: "+message);
+        }else {
+            return Result.error("上传失败: "+message);
+        }
+    }
+
+    @Override
+    public Result updateNickname(Integer userId, String newNickname) {
+        String request="<updateNickname>"+"<"+userId+">"+"<"+newNickname+">";
+        String response;
+        try{
+            response=requestSender.sendRequest(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //
+        List<String>r=responseHandler.handleParams(response);
+        Integer code=Integer.valueOf(r.get(0));
+        String message=r.get(1);
+        if(code==0){
+            return Result.success(message);
+        }else {
+            return Result.error(message);
+        }
+    }
+
+    @Override
+    public Result<User> getUserData(Integer userId) {
+        String request="<getUserData>"+"<"+userId+">";
+        String response;
+        try{
+            response=requestSender.sendRequest(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //
+        List<String>r=responseHandler.handleParams(response);
+        Integer code=Integer.valueOf(r.get(0));
+        String message=r.get(1);
+        if(code==0){
+            User user=new User();
+            //
+            String username=r.get(2);
+            String nickname=r.get(3);
+            String userAvatarUrl=r.get(4);
+            Integer status=Integer.valueOf(r.get(5));
+            //
+            user.setUsername(username);
+            user.setNickname(nickname);
+            user.setAvatar_url(userAvatarUrl);
+            user.setStatus(status);
+            //
+            return Result.success(user);
+        }else {
+            return Result.error(message);
+        }
+    }
 }

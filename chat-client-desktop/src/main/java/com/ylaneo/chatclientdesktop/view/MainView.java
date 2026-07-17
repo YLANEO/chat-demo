@@ -4,14 +4,14 @@ import com.ylaneo.chatclientdesktop.facade.UserFacade;
 import com.ylaneo.chatclientdesktop.facade.impl.UserFacadeImpl;
 import com.ylaneo.chatclientdesktop.session.UserSession;
 import com.ylaneo.chatclientdesktop.view.pages.UserInfoView;
+import com.ylaneo.chatclientdesktop.view.pages.UserInfoView_1;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
-import java.util.Map;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class MainView extends JFrame {
     // ======================================== 组件 ========================================
@@ -27,6 +27,15 @@ public class MainView extends JFrame {
         setSize(1600,1000);
         setLocationRelativeTo(null);
         setVisible(true);
+        //监听窗口关闭事件，并将用户状态修改为离线
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                //获取当前用户信息，并根据该信息修改数据库中的在线状态
+                UserFacade userFacade=new UserFacadeImpl();
+                userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
+            }
+        });
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //修改Jframe的默认内容容器为一个Jpanel，方便后面控制，相当于背景板
         JPanel backPanel=new JPanel();
@@ -47,7 +56,7 @@ public class MainView extends JFrame {
         //
         JPanel nav=new JPanel();
         nav.setLayout(new BoxLayout(nav,BoxLayout.Y_AXIS));//导航按钮纵向排列
-        nav.setPreferredSize(new Dimension(120,20));//设置尺寸
+        nav.setPreferredSize(new Dimension(100,20));//设置尺寸
         nav.setBackground(new Color(220,220,220));//导航栏背景颜色设置
         //创建并添加按钮
         navMessage=createNavButton("消息");
@@ -65,7 +74,7 @@ public class MainView extends JFrame {
         nav.add(jButtonLogout);
         //切换卡片功能
         navMessage.addActionListener(e->cardLayout.show(contentPanel,"message"));
-        navContact.addActionListener(e->cardLayout.show(contentPanel,"contact"));
+//        navContact.addActionListener(e->cardLayout.show(contentPanel,"contact"));
         navUserInfo.addActionListener(e->cardLayout.show(contentPanel,"userinfo"));
         //
         return nav;
@@ -88,13 +97,13 @@ public class MainView extends JFrame {
             public void mouseEntered(MouseEvent e) {
 //                super.mouseEntered(e);
                 jButton.setBackground(new Color(255, 255, 255));
-                jButton.setOpaque(true);
+                jButton.setOpaque(true);//设置为透明
             }
             //移开
             @Override
             public void mouseExited(MouseEvent e) {
 //                super.mouseExited(e);
-                jButton.setOpaque(false);
+                jButton.setOpaque(false);//设置为不透明
             }
         });
 
@@ -107,13 +116,18 @@ public class MainView extends JFrame {
         // contentPanel.add(new ChatView(),    "MESSAGE");
         // contentPanel.add(new ContactView(), "CONTACT");
         contentPanel.add(new UserInfoView(),"userinfo");
+        contentPanel.add(new UserInfoView_1(),"userinfo1");
         return contentPanel;
     }
     // ======================================== 统一进行按钮功能绑定 ========================================
     //退出登录
     public void bindButtonActions(){
         jButtonLogout.addActionListener(e->{
-            //
+            //弹出提示框，确认后再登出
+            int confirmDelete=JOptionPane.showConfirmDialog(this,"确认退出登录吗","确认退出登录窗口",JOptionPane.YES_NO_OPTION);//
+            if(confirmDelete!=JOptionPane.YES_OPTION){//没有选择确认按钮
+                return;
+            }
             UserFacade userFacade=new UserFacadeImpl();
             userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
             UserSession.getInstance().logout();
