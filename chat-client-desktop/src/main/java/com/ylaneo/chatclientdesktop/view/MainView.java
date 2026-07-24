@@ -3,6 +3,8 @@ package com.ylaneo.chatclientdesktop.view;
 import com.ylaneo.chatclientdesktop.facade.UserFacade;
 import com.ylaneo.chatclientdesktop.facade.impl.UserFacadeImpl;
 import com.ylaneo.chatclientdesktop.session.UserSession;
+import com.ylaneo.chatclientdesktop.view.pages.ContactView;
+import com.ylaneo.chatclientdesktop.view.pages.MessageView;
 import com.ylaneo.chatclientdesktop.view.pages.UserInfoView;
 import com.ylaneo.chatclientdesktop.view.pages.UserInfoView_1;
 
@@ -15,8 +17,8 @@ import java.awt.event.WindowEvent;
 
 public class MainView extends JFrame {
     // ======================================== 组件 ========================================
-    CardLayout cardLayout=new CardLayout();
-    JPanel contentPanel=new JPanel(cardLayout);//内容显示部分
+    public CardLayout cardLayout=new CardLayout();
+    public JPanel contentPanel=new JPanel(cardLayout);//内容显示部分
 
     //全局按钮统一定义在这里，方便后面按钮功能统一管理
     JButton navMessage,navContact,navUserInfo,jButtonLogout;
@@ -56,8 +58,11 @@ public class MainView extends JFrame {
         //
         JPanel nav=new JPanel();
         nav.setLayout(new BoxLayout(nav,BoxLayout.Y_AXIS));//导航按钮纵向排列
-        nav.setPreferredSize(new Dimension(100,20));//设置尺寸
-        nav.setBackground(new Color(220,220,220));//导航栏背景颜色设置
+        nav.setPreferredSize(new Dimension(98,40));//设置尺寸
+//        nav.setBackground(new Color(220,220,220));//导航栏背景颜色设置
+        nav.setBackground(new Color(175, 159, 248));//导航栏背景颜色设置
+//        nav.setBorder(BorderFactory.createLineBorder(new Color(138, 138, 138), 1));
+        nav.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 2, new Color(153, 133, 255)));//只创建右边的边框
         //创建并添加按钮
         navMessage=createNavButton("消息");
         navContact=createNavButton("好友");
@@ -74,7 +79,7 @@ public class MainView extends JFrame {
         nav.add(jButtonLogout);
         //切换卡片功能
         navMessage.addActionListener(e->cardLayout.show(contentPanel,"message"));
-//        navContact.addActionListener(e->cardLayout.show(contentPanel,"contact"));
+        navContact.addActionListener(e->cardLayout.show(contentPanel,"contact"));
         navUserInfo.addActionListener(e->cardLayout.show(contentPanel,"userinfo"));
         //
         return nav;
@@ -83,11 +88,11 @@ public class MainView extends JFrame {
     JButton createNavButton(String buttonText){
         JButton jButton=new JButton(buttonText);
         jButton.setHorizontalAlignment(SwingConstants.LEFT);//对齐方式
-        jButton.setPreferredSize(new Dimension(180,40));//
-        jButton.setFont(new Font("黑体",Font.BOLD,15));
-        jButton.setMaximumSize(new Dimension(9999,40));//横向占满该栏
+        jButton.setPreferredSize(new Dimension(80,40));//
+        jButton.setFont(new Font("微软雅黑",Font.BOLD,15));
+        jButton.setMaximumSize(new Dimension(200,40));//横向占满该栏
         jButton.setFocusPainted(false);
-        jButton.setBorderPainted(true);//边框
+        jButton.setBorderPainted(false);//边框
         jButton.setContentAreaFilled(false);//填充
         jButton.setCursor(new Cursor(Cursor.HAND_CURSOR));//鼠标悬停
         //
@@ -113,8 +118,8 @@ public class MainView extends JFrame {
     // ======================================== 创建内容部分并返回 ========================================
     JPanel contentArea(){
         //
-        // contentPanel.add(new ChatView(),    "MESSAGE");
-        // contentPanel.add(new ContactView(), "CONTACT");
+         contentPanel.add(new MessageView(),    "message");
+         contentPanel.add(new ContactView(), "contact");
         contentPanel.add(new UserInfoView(),"userinfo");
         contentPanel.add(new UserInfoView_1(),"userinfo1");
         return contentPanel;

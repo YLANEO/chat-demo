@@ -37,7 +37,7 @@ public class RequestSender {
 
         //write方法发送
         os.write(request.getBytes());//通过write方法向server发送请求
-        System.out.println("向server发送了请求");
+        System.out.println("向server发送了请求"+request);
 
         byte[] buffer = new byte[65535];//为什么使用byte类？
 

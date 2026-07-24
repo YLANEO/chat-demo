@@ -23,12 +23,12 @@ public class ResponseHandler {
         return result;//返回解析出的列表类型的数据
     }
 
-    public static void main(String[] args) {//测试用的代码，可以删，暂时保留
-        ResponseHandler responseHandler=new ResponseHandler();
-        List<String> params=responseHandler.handleParams("<login><username><password>");
-        for(int i=0;i<params.size();i++){
-            System.out.println("params "+i+" is : "+params.get(i));
-        }
-    }
+//    public static void main(String[] args) {//测试用的代码，可以删，暂时保留
+//        ResponseHandler responseHandler=new ResponseHandler();
+//        List<String> params=responseHandler.handleParams("<login><username><password>");
+//        for(int i=0;i<params.size();i++){
+//            System.out.println("params "+i+" is : "+params.get(i));
+//        }
+//    }
 
 }

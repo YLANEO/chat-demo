@@ -41,8 +41,10 @@ public class UserInfoView extends JPanel {
         //
         setLayout(new BorderLayout(0, 0));//设置布局方式，指定组件之间的横向、纵向间距
 //        setLayout(new BoxLayout(this,BoxLayout.Y_AXIS));
-        setBorder(BorderFactory.createEmptyBorder(1, 1, 2, 1));//创建透明边框
+//        setBorder(BorderFactory.createLineBorder(Color.GRAY,1));
+//        setBorder(BorderFactory.createEmptyBorder(1, 1, 2, 1));//创建透明边框
         setBackground(new Color(245, 245, 250));//设置背景的颜色
+//        setBackground(new Color(220,220,220));//设置背景的颜色
         //
 
         //设置整体的布局管理器
@@ -50,8 +52,8 @@ public class UserInfoView extends JPanel {
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 230), 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+                BorderFactory.createLineBorder(new Color(220, 220, 230), 0),//
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)//内边距
         ));
         //
         // 标题
@@ -104,7 +106,7 @@ public class UserInfoView extends JPanel {
         nicknameField = (JTextField) nicknameRow.getClientProperty("valueField");
         updateNicknameBtn = (JButton) nicknameRow.getClientProperty("actionBtn");
         styleButton(updateNicknameBtn, new Color(66, 133, 244));
-        updateNicknameBtn.setText("保存");
+//        updateNicknameBtn.setText("保存");
         updateNicknameBtn.addActionListener(e -> updateNickname());
         nicknameRow.setAlignmentX(Component.CENTER_ALIGNMENT);//
 
@@ -171,8 +173,8 @@ public class UserInfoView extends JPanel {
         currentAvatarUrl = user.getAvatar_url();
         loadAvatar(currentAvatarUrl);
     }
-    // ======================================== 工厂方法？？ ========================================
-    //按钮创建的工厂方法
+    // ======================================== 通用工具方法 ========================================
+    //修改按钮样式的工厂方法
     private void styleButton(JButton button, Color bgColor) {
         button.setFont(new Font("微软雅黑", Font.PLAIN, 13));
         button.setBackground(bgColor);
@@ -203,7 +205,7 @@ public class UserInfoView extends JPanel {
         row.setMaximumSize(new Dimension(600, 40));//最大宽度限制
         row.setAlignmentX(Component.CENTER_ALIGNMENT);//置于父组件中间
         //
-        row.putClientProperty("titleLabel", new JLabel(title));
+        row.putClientProperty("titleLabel", new JLabel(title));//使用客户端属性存储一个临时的 JLabel 引用到面板上，方便后续通过键名 "titleLabel" 检索（这是一个缓存/查找机制）
 
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(new Font("微软雅黑", Font.BOLD, 14));
@@ -213,7 +215,7 @@ public class UserInfoView extends JPanel {
         sign.setFont(new Font("微软雅黑", Font.BOLD, 16));
         row.add(titleLabel);
         row.add(sign);
-
+        //可以编辑的信息行
         if (editable) {
             JTextField textField = new JTextField();
             textField.setFont(new Font("微软雅黑", Font.PLAIN, 14));
@@ -226,20 +228,20 @@ public class UserInfoView extends JPanel {
                 textField.setText(value);
             }
             row.add(textField);
-            row.putClientProperty("valueField", textField);
-
+            row.putClientProperty("valueField", textField);//存储文本框引用到客户端属性，键名为 "valueField"
+            //为可编辑的信息行添加修改按钮
             JButton btn = new JButton("保存");
             btn.setFont(new Font("微软雅黑", Font.PLAIN, 12));
             btn.setPreferredSize(new Dimension(70, 32));
             row.add(Box.createHorizontalStrut(10));
             row.add(btn);
-            row.putClientProperty("actionBtn", btn);
-        } else {
+            row.putClientProperty("actionBtn", btn);//存储按钮引用到客户端属性，键名为 "actionBtn"
+        } else {//不能编辑的信息行
             JLabel valueLabel = new JLabel(value != null ? value : "");
             valueLabel.setFont(new Font("微软雅黑", Font.PLAIN, 14));
             valueLabel.setForeground(new Color(50, 50, 50));
             row.add(valueLabel);
-            row.putClientProperty("valueLabel", valueLabel);
+            row.putClientProperty("valueLabel", valueLabel);//存储文本框引用到客户端属性，键名为 "valueField"
         }
 
         return row;

@@ -1,6 +1,8 @@
 package com.ylaneo.chatserver.handler;
 
+import com.ylaneo.chatserver.service.ContactService;
 import com.ylaneo.chatserver.service.UserService;
+import com.ylaneo.chatserver.service.impl.ContactServiceImpl;
 import com.ylaneo.chatserver.service.impl.UserServiceImpl;
 import com.ylaneo.chatserver.util.RequestHandler;
 
@@ -83,6 +85,18 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<getUserData>")) {
             UserService userService=new UserServiceImpl();
             response=userService.getUserData(request);
+        } else if (request.startsWith("<getFriendList>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.getFriendList(request);
+        } else if (request.startsWith("<searchUserByKeyword>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.searchUserByKeyword(request);
+        } else if (request.startsWith("<sendFriendRequest>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.sendFriendRequest(request);
+        } else if (request.startsWith("<getFriendRequests>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.getFriendRequests(request);
         } else {
             response="<1><非法请求>";
         }
