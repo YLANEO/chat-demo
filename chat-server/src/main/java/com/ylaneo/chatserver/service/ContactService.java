@@ -1,5 +1,10 @@
 package com.ylaneo.chatserver.service;
 
+import com.ylaneo.chatserver.dto.FriendRequestDto;
+import com.ylaneo.chatserver.entity.Result;
+
+import java.util.List;
+
 public interface ContactService {
     //获取所有好友列表信息
     String getFriendList(String request);

@@ -4,6 +4,8 @@ import com.ylaneo.chatserver.dao.ContactDao;
 import com.ylaneo.chatserver.dao.UserDao;
 import com.ylaneo.chatserver.dao.impl.ContactDaoImpl;
 import com.ylaneo.chatserver.dao.impl.UserDaoImpl;
+import com.ylaneo.chatserver.dto.FriendRequestDto;
+import com.ylaneo.chatserver.entity.FriendRequest;
 import com.ylaneo.chatserver.entity.Result;
 import com.ylaneo.chatserver.entity.User;
 import com.ylaneo.chatserver.service.ContactService;
@@ -98,6 +100,34 @@ public class ContactServiceImpl implements ContactService {
 
     @Override
     public String getFriendRequests(String request) {
-        return null;
+        List<String> params=requestHandler.handleParams(request);
+        Integer receiverId=Integer.valueOf(params.get(1));
+        String response="";
+        Result r=contactDao.getFriendRequests(receiverId);
+        //
+        if(r.getCode()==0){
+            List<FriendRequestDto> friendRequestDtoList=(List<FriendRequestDto>)r.getData();
+//            friendList=(List<User>)r.getData();
+            int countList=friendRequestDtoList.size();
+            //
+            response=response+"<"+r.getCode()+">";
+            response=response+"<"+r.getMessage()+">";
+            response=response+"<"+countList+">";
+            for(int i=0;i<countList;i++){
+                //不要忘记加尖括号<>
+                response=response+"<"+friendRequestDtoList.get(i).getRequestId()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getSenderId()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getSenderUsername()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getSenderNickname()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getSenderAvatar()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getMessage()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getStatus()+">";
+                response=response+"<"+friendRequestDtoList.get(i).getCreateTime()+">";
+            }
+        }else {
+            response=response+"<"+r.getCode()+">";
+            response=response+"<"+r.getMessage()+">";
+        }
+        return response;
     }
 }

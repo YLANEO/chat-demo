@@ -1,5 +1,7 @@
 package com.ylaneo.chatclientdesktop.view.pages;
 
+import com.ylaneo.chatclientdesktop.dto.FriendRequestDto;
+import com.ylaneo.chatclientdesktop.entity.Result;
 import com.ylaneo.chatclientdesktop.entity.User;
 import com.ylaneo.chatclientdesktop.facade.ContactFacade;
 import com.ylaneo.chatclientdesktop.facade.UserFacade;
@@ -25,9 +27,9 @@ public class ContactView extends JPanel {
     UserFacade userFacade=new UserFacadeImpl();
     ContactFacade contactFacade=new ContactFacadeImpl();
     //左侧
-    private JTextField searchFriendField;   // 搜索已添加好友
-    private JTextField searchUserField;     // 搜索用户用于添加
-    private JPanel friendListPanel;         // 好友列表容器
+    private JTextField searchFriendField;//搜索已添加好友
+    private JTextField searchUserField;//搜索用户用于添加
+    private JPanel friendListPanel;//好友列表容器
     private JLabel leftTitle;
     //右侧
     private JLabel detailAvatar;
@@ -36,8 +38,9 @@ public class ContactView extends JPanel {
     private JLabel detailStatus;
     private JLabel detailRemark;
     private JButton sendMessageBtn;
-    private JPanel rightPlaceholder;        // 右侧默认占位
-    private JPanel rightDetailPanel;        // 右侧详情容器
+    private JPanel rightPlaceholder;//右侧默认占位
+    private JPanel rightDetailPanel;//右侧详情容器
+    private JPanel rightRequestsPanel;//好友申请页面
     // 当前选中的好友
     private User currentSelectedFriend;
     // ======================================== 构造函数 ========================================
@@ -70,7 +73,7 @@ public class ContactView extends JPanel {
         //两行搜索框
         searchFriendField = createSearchField("搜索已添加好友");
         searchUserField = createSearchField("搜索用户昵称/用户名");
-        // 搜索按钮：添加用户
+        //搜索用户的按钮
         JButton searchUserBtn = new JButton("搜索用户");
         styleButton(searchUserBtn, new Color(66, 133, 244));
         searchUserBtn.setPreferredSize(new Dimension(80, 35));
@@ -79,7 +82,13 @@ public class ContactView extends JPanel {
         JPanel row2 = new JPanel(new BorderLayout(6, 0));//6px横向间距
         row2.add(searchUserField, BorderLayout.CENTER);//CENTER会填满剩余空间
         row2.add(searchUserBtn, BorderLayout.EAST);//按钮固定在右侧
-        // 顶部区域（标题 + 两个搜索框）
+        //查看收到的好友申请按钮
+        JButton viewRequestsBtn = new JButton("查看收到的好友申请");
+        styleButton(viewRequestsBtn, new Color(255, 152, 0));  // 橙色提示
+        viewRequestsBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        viewRequestsBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        viewRequestsBtn.addActionListener(e -> showFriendRequestsView());
+        //顶部：两个搜索功能和一个好友申请查看按钮
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
         topPanel.setOpaque(false);
@@ -88,24 +97,27 @@ public class ContactView extends JPanel {
         searchFriendField.setAlignmentX(Component.CENTER_ALIGNMENT);
         searchUserField.setAlignmentX(Component.CENTER_ALIGNMENT);
         searchUserBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-//        topPanel.add(leftTitle);
-        topPanel.add(Box.createVerticalStrut(12));
+        //将所有组件加入到顶部区域
         topPanel.add(searchFriendField);
         topPanel.add(Box.createVerticalStrut(8));
         topPanel.add(row2);
         topPanel.add(Box.createVerticalStrut(6));
+        topPanel.add(viewRequestsBtn);//
+        topPanel.add(Box.createVerticalStrut(12));
+        topPanel.add(leftTitle);
 
         topPanel.setBorder(BorderFactory.createEmptyBorder(0,5,0,5));//
-        // 好友列表（放入 JScrollPane）
+        //好友列表区域，
         friendListPanel = new JPanel();
         friendListPanel.setLayout(new BoxLayout(friendListPanel, BoxLayout.Y_AXIS));
         friendListPanel.setBackground(Color.WHITE);
+        //用于存放好友列表组件的可滚动页面
         JScrollPane scroll = new JScrollPane(friendListPanel);
         scroll.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 230)));
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         leftPanel.add(topPanel, BorderLayout.NORTH);
         leftPanel.add(scroll, BorderLayout.CENTER);
-        // 监听本地好友搜索：过滤已显示的列表
+        //监听本地好友搜索：过滤已显示的列表
         searchFriendField.addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
             public void keyReleased(java.awt.event.KeyEvent e) {
@@ -120,19 +132,24 @@ public class ContactView extends JPanel {
         rightPanel.setBackground(Color.WHITE);
         rightPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 //        rightPanel.setBorder(BorderFactory.createLineBorder(new Color(138, 138, 138), 1));
-        // 默认占位
+        //未选中好友时显示的空页面
         rightPlaceholder = new JPanel(new GridBagLayout());
         rightPlaceholder.setBackground(Color.WHITE);
         JLabel tip = new JLabel("请在左侧选择一位好友查看详情");
         tip.setFont(new Font("微软雅黑", Font.PLAIN, 15));
         tip.setForeground(new Color(150, 150, 160));
         rightPlaceholder.add(tip);
-        // 详情面板
+        //好友信息页面和好友申请页面
         rightDetailPanel = buildDetailPanel();
+        rightRequestsPanel = new JPanel();  //占位，会动态替换内容
+        rightRequestsPanel.setLayout(new BorderLayout());
+        //添加到卡片中
         rightPanel.add(rightPlaceholder, "placeholder");
         rightPanel.add(rightDetailPanel, "detail");
+        rightPanel.add(rightRequestsPanel, "requests");
         return rightPanel;
     }
+    //构建右侧好友信息显示页面
     private JPanel buildDetailPanel() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Color.WHITE);
@@ -234,6 +251,152 @@ public class ContactView extends JPanel {
         root.add(center, BorderLayout.CENTER);
         return root;
     }
+    //好友申请页面创建
+    private void showFriendRequestsView() {
+        Integer currentUserId = UserSession.getInstance().getCurrentUser().getUserid();
+        Result<List<FriendRequestDto>> result = contactFacade.getFriendRequests(currentUserId);
+
+        if (result.getCode() != 0) {
+            JOptionPane.showMessageDialog(this, result.getMessage());
+            return;
+        }
+
+        List<FriendRequestDto> requests = result.getData();
+
+        // 创建好友申请列表面板
+//        JPanel requestsPanel = new JPanel(new BorderLayout());
+        rightRequestsPanel.setBackground(Color.WHITE);
+        rightRequestsPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+
+        // 标题
+        JLabel title = new JLabel("收到的好友申请（共 " + requests.size() + " 条）");
+        title.setFont(new Font("微软雅黑", Font.BOLD, 18));
+        title.setBorder(new EmptyBorder(0, 0, 15, 0));
+        rightRequestsPanel.add(title, BorderLayout.NORTH);
+
+        // 列表容器
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setBackground(Color.WHITE);
+
+        if (requests.isEmpty()) {
+            JLabel empty = new JLabel("暂无好友申请");
+            empty.setFont(new Font("微软雅黑", Font.PLAIN, 14));
+            empty.setForeground(new Color(150, 150, 160));
+            empty.setHorizontalAlignment(SwingConstants.CENTER);
+            listPanel.add(empty);
+        } else {
+            for (FriendRequestDto item : requests) {
+                listPanel.add(createFriendRequestRow(item));
+                listPanel.add(Box.createVerticalStrut(8));
+            }
+        }
+
+        JScrollPane scroll = new JScrollPane(listPanel);
+        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        rightRequestsPanel.add(scroll, BorderLayout.CENTER);
+
+        // 用一个新的 rightPanel（CardLayout）显示
+        // 或者用一个全局的 rightRequestsPanel 字段
+//        rightRequestsPanel = requestsPanel;
+        CardLayout cl = (CardLayout) ((JPanel) rightRequestsPanel.getParent()).getLayout();
+        cl.show((JPanel) rightRequestsPanel.getParent(), "requests");
+    }
+    //显示选中一条好友申请行的备注详细信息
+    private void showFriendRequestDetailDialog(FriendRequestDto item) {
+        JDialog dialog = new JDialog(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                "好友申请详情",
+                true  // modal
+        );
+        dialog.setSize(450, 350);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel root = new JPanel(new BorderLayout(0, 15));
+        root.setBackground(Color.WHITE);
+        root.setBorder(new EmptyBorder(20, 25, 20, 25));
+
+        // 顶部：头像 + 昵称 + 用户名
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        topPanel.setOpaque(false);
+
+        JLabel avatar = new JLabel();
+        avatar.setPreferredSize(new Dimension(80, 80));
+        avatar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel avatarContainer = new JPanel(new BorderLayout());
+        avatarContainer.setOpaque(false);
+        avatarContainer.setPreferredSize(new Dimension(80, 80));
+        avatarContainer.add(avatar, BorderLayout.CENTER);
+        loadAvatarInto(avatar, item.getSenderAvatar(), 80);
+
+        JLabel nicknameLabel = new JLabel(
+                item.getSenderNickname() != null ? item.getSenderNickname() : "-");
+        nicknameLabel.setFont(new Font("微软雅黑", Font.BOLD, 16));
+        nicknameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel usernameLabel = new JLabel("@" + item.getSenderUsername());
+        usernameLabel.setFont(new Font("微软雅黑", Font.PLAIN, 12));
+        usernameLabel.setForeground(new Color(130, 130, 140));
+        usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        topPanel.add(avatarContainer);
+        topPanel.add(Box.createVerticalStrut(8));
+        topPanel.add(nicknameLabel);
+        topPanel.add(Box.createVerticalStrut(2));
+        topPanel.add(usernameLabel);
+
+        // 中间：备注信息
+        JPanel msgPanel = new JPanel(new BorderLayout());
+        msgPanel.setBackground(new Color(245, 245, 250));
+        msgPanel.setBorder(new EmptyBorder(12, 15, 12, 15));
+
+        JTextArea msgArea = new JTextArea(item.getMessage() != null ? item.getMessage() : "(无备注)");
+        msgArea.setFont(new Font("微软雅黑", Font.PLAIN, 13));
+        msgArea.setLineWrap(true);
+        msgArea.setWrapStyleWord(true);
+        msgArea.setEditable(false);
+        msgArea.setOpaque(false);
+        msgPanel.add(msgArea, BorderLayout.CENTER);
+
+        // 底部：同意 / 拒绝 按钮
+        JPanel btnPanel = new JPanel();
+        btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.X_AXIS));
+        btnPanel.setOpaque(false);
+
+        JButton acceptBtn = new JButton("同意");
+        styleButton(acceptBtn, new Color(76, 175, 80));
+        JButton rejectBtn = new JButton("拒绝");
+        styleButton(rejectBtn, new Color(244, 67, 54));
+
+        acceptBtn.setPreferredSize(new Dimension(100, 38));
+        rejectBtn.setPreferredSize(new Dimension(100, 38));
+
+        btnPanel.add(Box.createHorizontalGlue());
+        btnPanel.add(rejectBtn);
+        btnPanel.add(Box.createHorizontalStrut(12));
+        btnPanel.add(acceptBtn);
+        btnPanel.add(Box.createHorizontalGlue());
+
+        root.add(topPanel, BorderLayout.NORTH);
+        root.add(msgPanel, BorderLayout.CENTER);
+        root.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(root);
+
+//        // 绑定事件
+//        acceptBtn.addActionListener(e -> {
+//            handleRespondRequest(item.getRequestId(), 1);
+//            dialog.dispose();
+//        });
+//        rejectBtn.addActionListener(e -> {
+//            handleRespondRequest(item.getRequestId(), 2);
+//            dialog.dispose();
+//        });
+
+        dialog.setVisible(true);
+    }
     // ======================================== 通用工具方法 ========================================
     //统一按钮样式的工具方法
     private void styleButton(JButton button, Color bgColor) {
@@ -274,7 +437,7 @@ public class ContactView extends JPanel {
         f.setToolTipText(placeholder);
         return f;
     }
-    //创建信息行的方法
+    //创建好友信息页面信息行的方法
     private JPanel createInfoRow(String title, String value, boolean editable) {
         JPanel row = new JPanel();
         //
@@ -320,6 +483,97 @@ public class ContactView extends JPanel {
             row.add(valueLabel);
             row.putClientProperty("valueLabel", valueLabel);//存储文本框引用到客户端属性，键名为 "valueField"
         }
+
+        return row;
+    }
+
+    //好友申请行创建方法
+    private JPanel createFriendRequestRow(FriendRequestDto item) {
+        JPanel row = new JPanel(new BorderLayout(12, 0));
+        row.setBackground(Color.WHITE);
+        row.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 230)),
+                new EmptyBorder(12, 12, 12, 12)
+        ));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+
+        // 左侧：头像
+        JLabel avatar = new JLabel();
+        avatar.setPreferredSize(new Dimension(50, 50));
+        loadAvatarInto(avatar, item.getSenderAvatar(), 50);
+
+        // 中间：昵称 + 用户名
+        JPanel info = new JPanel();
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.setOpaque(false);
+        JLabel nicknameLabel = new JLabel(
+                item.getSenderNickname() != null ? item.getSenderNickname() : "-");
+        nicknameLabel.setFont(new Font("微软雅黑", Font.BOLD, 14));
+        JLabel usernameLabel = new JLabel("@" + item.getSenderUsername());
+        usernameLabel.setFont(new Font("微软雅黑", Font.PLAIN, 12));
+        usernameLabel.setForeground(new Color(130, 130, 140));
+        nicknameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        info.add(nicknameLabel);
+        info.add(Box.createVerticalStrut(2));
+        info.add(usernameLabel);
+
+        // 中间偏右：备注信息（截断显示）
+        JLabel messageLabel = new JLabel();
+        messageLabel.setFont(new Font("微软雅黑", Font.PLAIN, 12));
+        messageLabel.setForeground(new Color(100, 100, 110));
+        String msg = item.getMessage() != null ? item.getMessage() : "";
+        if (msg.length() > 30) msg = msg.substring(0, 30) + "...";
+        messageLabel.setText("备注: " + msg);
+
+        // 右侧：同意 / 拒绝按钮
+        JButton acceptBtn = new JButton("同意");
+        styleButton(acceptBtn, new Color(76, 175, 80));  // 绿色
+        JButton rejectBtn = new JButton("拒绝");
+        styleButton(rejectBtn, new Color(244, 67, 54));  // 红色
+
+        JPanel btnPanel = new JPanel();
+        btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.X_AXIS));
+        btnPanel.setOpaque(false);
+        btnPanel.add(acceptBtn);
+        btnPanel.add(Box.createHorizontalStrut(8));
+        btnPanel.add(rejectBtn);
+
+        JPanel eastBox = new JPanel(new BorderLayout());
+        eastBox.setOpaque(false);
+        eastBox.add(btnPanel, BorderLayout.CENTER);
+
+        // 中间区域：信息 + 备注
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(false);
+        info.setAlignmentX(Component.LEFT_ALIGNMENT);
+        messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        centerPanel.add(info);
+        centerPanel.add(Box.createVerticalStrut(4));
+        centerPanel.add(messageLabel);
+
+        row.add(avatar, BorderLayout.WEST);
+        row.add(centerPanel, BorderLayout.CENTER);
+        row.add(eastBox, BorderLayout.EAST);
+
+        // 整行点击 → 弹窗显示详情
+        final FriendRequestDto finalItem = item;
+        row.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                showFriendRequestDetailDialog(finalItem);//展示选中行的备注信息弹窗
+            }
+            @Override public void mouseEntered(MouseEvent e) {
+                row.setBackground(new Color(245, 245, 250));
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                row.setBackground(Color.WHITE);
+            }
+        });
+
+//        //按钮事件
+//        acceptBtn.addActionListener(e -> handleRespondRequest(item.getRequestId(), 1));
+//        rejectBtn.addActionListener(e -> handleRespondRequest(item.getRequestId(), 2));
 
         return row;
     }
@@ -420,13 +674,13 @@ public class ContactView extends JPanel {
             @Override public void mouseEntered(MouseEvent e) { row.setBackground(new Color(230, 238, 255)); }
             @Override public void mouseExited(MouseEvent e)  { row.setBackground(Color.WHITE); }
             @Override public void mouseClicked(MouseEvent e) {
-                currentSelectedFriend = friend;
-                showFriendDetail(friend, null);
+                currentSelectedFriend = friend;//
+                showFriendDetail(friend, null);//显示选中用户的信息到右侧页面
             }
         });
         return row;
     }
-    //显示好友详情
+    //在右侧页面显示被选中的好友信息
     private void showFriendDetail(User friend, String remark) {
         loadAvatarInto(detailAvatar, friend.getAvatar_url(), 160);
         detailNickname.setText( (friend.getNickname() == null ? "-" : friend.getNickname()));
@@ -440,7 +694,7 @@ public class ContactView extends JPanel {
         }
         detailRemark.setText( (remark == null ? "(未设置)" : remark));
         CardLayout cl = (CardLayout) ((JPanel) rightDetailPanel.getParent()).getLayout();
-        cl.show((JPanel) rightDetailPanel.getParent(), "detail");
+        cl.show((JPanel) rightDetailPanel.getParent(), "detail");//将右侧页面切换为被选中的好友信息页面
     }
     //过滤好友列表
     private void filterFriendList(String keyword) {

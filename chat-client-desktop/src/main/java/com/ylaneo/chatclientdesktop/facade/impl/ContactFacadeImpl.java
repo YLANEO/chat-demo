@@ -1,5 +1,6 @@
 package com.ylaneo.chatclientdesktop.facade.impl;
 
+import com.ylaneo.chatclientdesktop.dto.FriendRequestDto;
 import com.ylaneo.chatclientdesktop.entity.FriendRequest;
 import com.ylaneo.chatclientdesktop.entity.Result;
 import com.ylaneo.chatclientdesktop.entity.User;
@@ -8,6 +9,7 @@ import com.ylaneo.chatclientdesktop.net.RequestSender;
 import com.ylaneo.chatclientdesktop.util.ResponseHandler;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,9 +113,9 @@ public class ContactFacadeImpl implements ContactFacade {
     }
 
     @Override
-    public Result<List<FriendRequest>> getFriendRequests(Integer receiverId) {
+    public Result<List<FriendRequestDto>> getFriendRequests(Integer receiverId) {
         //通过socket获得字符串格式的数据
-        String request="<searchUserByKeyword>"+"<"+receiverId+">";//组装request从requestsender拿到service层中
+        String request="<getFriendRequests>"+"<"+receiverId+">";//组装request从requestsender拿到service层中
         String response;//用于接收数据
         try {
             response= requestSender.sendRequest(request);
@@ -128,21 +130,27 @@ public class ContactFacadeImpl implements ContactFacade {
         Integer countList=Integer.valueOf(r.get(2));//有几条数据
         if(code==0){
             //创建一个list对象，进行赋值，用于封装到Result中
-            List<FriendRequest>requestList=new ArrayList<>();
+            List<FriendRequestDto>requestList=new ArrayList<>();
             //从第3个序号开始将response中解析出来的信息放入对应的对象中去
             for(int i=0;i<countList;i++){
-                FriendRequest friendRequest=new FriendRequest();
-//                int j=i*4+3;
-                friendRequest.setSenderId(Integer.valueOf(r.get(4*i+3)));
-                friendRequest.setReceriverId(Integer.valueOf(r.get(4*i+4)));
-                friendRequest.setMessage(r.get(4*i+5));
-                friendRequest.setStatus(Integer.valueOf(r.get(4*i+6)));
-                requestList.add(friendRequest);
+                FriendRequestDto friendRequestDto=new FriendRequestDto();
+                //为该对象的 各个属性赋值
+                friendRequestDto.setRequestId(Integer.valueOf(r.get(8*i+3)));
+                friendRequestDto.setSenderId(Integer.valueOf(r.get(8*i+4)));
+                friendRequestDto.setSenderUsername(r.get(8*i+5));
+                friendRequestDto.setSenderNickname(r.get(8*i+6));
+                friendRequestDto.setSenderAvatar(r.get(8*i+7));
+                friendRequestDto.setMessage(r.get(8*i+8));
+                friendRequestDto.setStatus(Integer.valueOf(r.get(8*i+9)));
+                //这里处理LocalDateTime类
+                String requestCreatetimeStr=r.get(8*i+10);
+                friendRequestDto.setCreateTime(requestCreatetimeStr==null||requestCreatetimeStr.isEmpty()? null : LocalDateTime.parse(requestCreatetimeStr));
+                requestList.add(friendRequestDto);
             }
             return Result.success(requestList);
         }else {
             //
-            return Result.error("获取好友列表信息失败:"+message);
+            return Result.error("获取好友申请列表信息失败:"+message);
         }
     }
 

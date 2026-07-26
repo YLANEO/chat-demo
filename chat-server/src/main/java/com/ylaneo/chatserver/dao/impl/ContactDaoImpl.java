@@ -1,6 +1,7 @@
 package com.ylaneo.chatserver.dao.impl;
 
 import com.ylaneo.chatserver.dao.ContactDao;
+import com.ylaneo.chatserver.dto.FriendRequestDto;
 import com.ylaneo.chatserver.entity.FriendRequest;
 import com.ylaneo.chatserver.entity.Result;
 import com.ylaneo.chatserver.entity.User;
@@ -10,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +49,7 @@ public class ContactDaoImpl implements ContactDao {
 
     @Override
     public Result<List<User>> searchUserByKeyword(String keyword, Integer currentUserId) {
-        String sql = "select id, username, nickname, avatar_url, status FROM user where (nickname LIKE ? or username like ?) and id != ?";
+        String sql = "select id, username, nickname, avatar_url, status from user where (nickname like ? or username like ?) and id != ?";
         try (Connection conn = new DBConnection().getConnection();
              PreparedStatement pt = conn.prepareStatement(sql)) {
             pt.setString(1, "%" + keyword + "%");//昵称模糊匹配
@@ -93,7 +95,34 @@ public class ContactDaoImpl implements ContactDao {
     }
 
     @Override
-    public Result<List<FriendRequest>> getFriendRequests(Integer receiverId) {
-        return null;
+    public Result<List<FriendRequestDto>> getFriendRequests(Integer receiverId) {
+        //要返回发送申请者的头像，所以需要连表查询
+        String sql="select fr.id as frId,fr.sender_id as senderId,u.username,u.nickname,u.avatar_url,fr.message as frMessage,fr.status,fr.create_time " +
+                "from friend_request fr " +
+                "inner join user u on fr.sender_id=u.id " +
+                "where receiver_id=? ";
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement pt = conn.prepareStatement(sql)) {
+            pt.setInt(1,receiverId);
+            ResultSet resultSet = pt.executeQuery();
+            List<FriendRequestDto> friendRequestDtoList = new ArrayList<>();
+            while (resultSet.next()) {
+                User u = new User();
+                FriendRequestDto friendRequestDto=new FriendRequestDto();
+                friendRequestDto.setRequestId(resultSet.getInt("frId"));
+                friendRequestDto.setSenderId(resultSet.getInt("senderId"));
+                friendRequestDto.setSenderUsername(resultSet.getString("username"));
+                friendRequestDto.setSenderNickname(resultSet.getString("nickname"));
+                friendRequestDto.setSenderAvatar(resultSet.getString("avatar_url"));
+                friendRequestDto.setMessage(resultSet.getString("frMessage"));
+                friendRequestDto.setStatus(resultSet.getInt("status"));
+                friendRequestDto.setCreateTime(resultSet.getObject("create_time", LocalDateTime.class));//
+                friendRequestDtoList.add(friendRequestDto);
+            }
+            //
+            return Result.success(friendRequestDtoList);
+        } catch (SQLException e) {
+            return Result.error("数据库错误:" + e.getMessage());
+        }
     }
 }

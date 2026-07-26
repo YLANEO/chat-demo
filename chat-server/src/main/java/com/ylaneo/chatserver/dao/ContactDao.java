@@ -1,5 +1,6 @@
 package com.ylaneo.chatserver.dao;
 
+import com.ylaneo.chatserver.dto.FriendRequestDto;
 import com.ylaneo.chatserver.entity.FriendRequest;
 import com.ylaneo.chatserver.entity.Result;
 import com.ylaneo.chatserver.entity.User;
@@ -14,5 +15,5 @@ public interface ContactDao {
     //发送好友申请
     Result sendFriendRequest(Integer senderId, Integer receiverId, String message);
     //获取当前用户的待处理的好友申请列表
-    Result<List<FriendRequest>> getFriendRequests(Integer receiverId);
+    Result<List<FriendRequestDto>> getFriendRequests(Integer receiverId);
 }

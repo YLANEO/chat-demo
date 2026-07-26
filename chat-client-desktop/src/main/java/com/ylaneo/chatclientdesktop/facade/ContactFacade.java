@@ -1,5 +1,6 @@
 package com.ylaneo.chatclientdesktop.facade;
 
+import com.ylaneo.chatclientdesktop.dto.FriendRequestDto;
 import com.ylaneo.chatclientdesktop.entity.FriendRequest;
 import com.ylaneo.chatclientdesktop.entity.Result;
 import com.ylaneo.chatclientdesktop.entity.User;
@@ -14,7 +15,7 @@ public interface ContactFacade {
     //发送好友申请
     Result sendFriendRequest(Integer senderId,Integer receiverId,String message);
     //获取当前用户的待处理的好友申请列表
-    Result<List<FriendRequest>> getFriendRequests(Integer receiverId);
+    Result<List<FriendRequestDto>> getFriendRequests(Integer receiverId);
     //处理好友申请
 //    Result
 }
