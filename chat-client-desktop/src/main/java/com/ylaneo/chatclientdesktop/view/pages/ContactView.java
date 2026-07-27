@@ -84,7 +84,7 @@ public class ContactView extends JPanel {
         row2.add(searchUserBtn, BorderLayout.EAST);//按钮固定在右侧
         //查看收到的好友申请按钮
         JButton viewRequestsBtn = new JButton("查看收到的好友申请");
-        styleButton(viewRequestsBtn, new Color(255, 152, 0));  // 橙色提示
+        styleButton(viewRequestsBtn, new Color(124, 146, 220));  // 橙色提示
         viewRequestsBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         viewRequestsBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         viewRequestsBtn.addActionListener(e -> showFriendRequestsView());
@@ -98,16 +98,17 @@ public class ContactView extends JPanel {
         searchUserField.setAlignmentX(Component.CENTER_ALIGNMENT);
         searchUserBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         //将所有组件加入到顶部区域
+        topPanel.add(Box.createVerticalStrut(5));
         topPanel.add(searchFriendField);
         topPanel.add(Box.createVerticalStrut(8));
         topPanel.add(row2);
         topPanel.add(Box.createVerticalStrut(6));
         topPanel.add(viewRequestsBtn);//
-        topPanel.add(Box.createVerticalStrut(12));
+        topPanel.add(Box.createVerticalStrut(6));
         topPanel.add(leftTitle);
 
         topPanel.setBorder(BorderFactory.createEmptyBorder(0,5,0,5));//
-        //好友列表区域，
+        //好友列表区域
         friendListPanel = new JPanel();
         friendListPanel.setLayout(new BoxLayout(friendListPanel, BoxLayout.Y_AXIS));
         friendListPanel.setBackground(Color.WHITE);
@@ -181,16 +182,7 @@ public class ContactView extends JPanel {
         info.setOpaque(false);
         info.setAlignmentX(Component.CENTER_ALIGNMENT);
         info.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
-        /*// 信息行
-        detailNickname = createInfoLabel(20, true);
-        detailUsername = createInfoLabel(14, false);
-        detailStatus = createInfoLabel(14, false);
-        detailRemark = createInfoLabel(14, false);
-        //居中
-        detailNickname.setAlignmentX(Component.LEFT_ALIGNMENT);
-        detailUsername.setAlignmentX(Component.LEFT_ALIGNMENT);
-        detailStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
-        detailRemark.setAlignmentX(Component.LEFT_ALIGNMENT);*/
+
         //另一种方法创建信息行
         //
         JPanel jPanelNickname=createInfoRow("昵称",null,false);
@@ -251,8 +243,13 @@ public class ContactView extends JPanel {
         root.add(center, BorderLayout.CENTER);
         return root;
     }
-    //好友申请页面创建
+    //好友申请查看页面
     private void showFriendRequestsView() {
+        //首先清除之前的列表页面，防止重叠放置，注意需要进行三步操作。后面两步不能漏，
+        rightRequestsPanel.removeAll();
+        rightRequestsPanel.revalidate();
+        rightRequestsPanel.repaint();
+        //
         Integer currentUserId = UserSession.getInstance().getCurrentUser().getUserid();
         Result<List<FriendRequestDto>> result = contactFacade.getFriendRequests(currentUserId);
 
@@ -264,7 +261,6 @@ public class ContactView extends JPanel {
         List<FriendRequestDto> requests = result.getData();
 
         // 创建好友申请列表面板
-//        JPanel requestsPanel = new JPanel(new BorderLayout());
         rightRequestsPanel.setBackground(Color.WHITE);
         rightRequestsPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
 
@@ -299,11 +295,10 @@ public class ContactView extends JPanel {
 
         // 用一个新的 rightPanel（CardLayout）显示
         // 或者用一个全局的 rightRequestsPanel 字段
-//        rightRequestsPanel = requestsPanel;
         CardLayout cl = (CardLayout) ((JPanel) rightRequestsPanel.getParent()).getLayout();
         cl.show((JPanel) rightRequestsPanel.getParent(), "requests");
     }
-    //显示选中一条好友申请行的备注详细信息
+    //点击一条好友申请行弹窗显示备注详细信息
     private void showFriendRequestDetailDialog(FriendRequestDto item) {
         JDialog dialog = new JDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this),
@@ -385,15 +380,17 @@ public class ContactView extends JPanel {
 
         dialog.setContentPane(root);
 
-//        // 绑定事件
-//        acceptBtn.addActionListener(e -> {
-//            handleRespondRequest(item.getRequestId(), 1);
-//            dialog.dispose();
-//        });
-//        rejectBtn.addActionListener(e -> {
-//            handleRespondRequest(item.getRequestId(), 2);
-//            dialog.dispose();
-//        });
+        // 绑定事件
+        Integer senderId=item.getSenderId();
+        Integer receiverId=UserSession.getInstance().getCurrentUser().getUserid();
+        acceptBtn.addActionListener(e -> {
+            handleRespondRequest(item.getRequestId(),senderId,receiverId,1);
+            dialog.dispose();
+        });
+        rejectBtn.addActionListener(e -> {
+            handleRespondRequest(item.getRequestId(),senderId,receiverId,2);
+            dialog.dispose();
+        });
 
         dialog.setVisible(true);
     }
@@ -487,7 +484,7 @@ public class ContactView extends JPanel {
         return row;
     }
 
-    //好友申请行创建方法
+    //查看好友申请行创建方法
     private JPanel createFriendRequestRow(FriendRequestDto item) {
         JPanel row = new JPanel(new BorderLayout(12, 0));
         row.setBackground(Color.WHITE);
@@ -571,9 +568,11 @@ public class ContactView extends JPanel {
             }
         });
 
-//        //按钮事件
-//        acceptBtn.addActionListener(e -> handleRespondRequest(item.getRequestId(), 1));
-//        rejectBtn.addActionListener(e -> handleRespondRequest(item.getRequestId(), 2));
+        //按钮事件
+        Integer senderId=item.getSenderId();
+        Integer receiverId=UserSession.getInstance().getCurrentUser().getUserid();
+        acceptBtn.addActionListener(e -> handleRespondRequest(item.getRequestId(),senderId,receiverId,1));
+        rejectBtn.addActionListener(e -> handleRespondRequest(item.getRequestId(),senderId,receiverId,2));
 
         return row;
     }
@@ -637,8 +636,8 @@ public class ContactView extends JPanel {
 //                friendListPanel.add(new JSeparator());
             }
         }
-        friendListPanel.revalidate();
-        friendListPanel.repaint();
+        friendListPanel.revalidate();//
+        friendListPanel.repaint();//
     }
     //创建一行好友行，用于上面的渲染好友列表
     private JPanel createFriendRow(User friend) {
@@ -763,6 +762,22 @@ public class ContactView extends JPanel {
         if (window instanceof MainView) {
             ((MainView) window).cardLayout.show(((MainView) window).contentPanel, "message");
             // TODO: 将 currentSelectedFriend.getUserid() 传给 MessageView，定位会话窗口
+        }
+    }
+    //处理好友申请按钮
+    // ContactView 中调用
+    private void handleRespondRequest(Integer requestId,Integer senderId, Integer receiverId, Integer action) {
+        Result result = contactFacade.handleRequest(requestId,senderId,receiverId,action);
+        if (result.getCode() == 0) {
+            JOptionPane.showMessageDialog(this, action == 1 ? "已同意" : "已拒绝");
+            // 刷新好友申请列表
+            showFriendRequestsView();
+            // 如果是同意，可能还需要刷新好友列表
+            if (action == 1) {
+                loadContacts();//同意好友申请后需要重新渲染好友列表
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "操作失败：" + result.getMessage());
         }
     }
 

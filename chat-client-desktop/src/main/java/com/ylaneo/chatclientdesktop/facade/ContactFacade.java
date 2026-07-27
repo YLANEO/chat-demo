@@ -16,6 +16,6 @@ public interface ContactFacade {
     Result sendFriendRequest(Integer senderId,Integer receiverId,String message);
     //获取当前用户的待处理的好友申请列表
     Result<List<FriendRequestDto>> getFriendRequests(Integer receiverId);
-    //处理好友申请
-//    Result
+    //处理好友申请,根据申请的id和要修改的状态代码
+    Result handleRequest(Integer friendRequestId, Integer senderId, Integer receiverId, Integer status);
 }

@@ -154,4 +154,26 @@ public class ContactFacadeImpl implements ContactFacade {
         }
     }
 
+    @Override
+    public Result handleRequest(Integer friendRequestId, Integer senderId, Integer receiverId, Integer status) {
+        String request="<handleRequest>"+"<"+friendRequestId+">"+"<"+senderId+">"+"<"+receiverId+">"+"<"+status+">";
+        String response;//用于接收数据
+        try {
+            response= requestSender.sendRequest(request);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        //将response从String转换为列表形式
+        List<String> r=responseHandler.handleParams(response);
+        //将列表中的数据取出，并将String类型转为正确的数据类型
+        Integer code=Integer.valueOf(r.get(0)) ;
+        String message=r.get(1);
+        if(code==0){
+            return Result.success(message);
+        }else {
+            //
+            return Result.error(message);
+        }
+    }
+
 }

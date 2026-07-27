@@ -14,4 +14,6 @@ public interface ContactService {
     String sendFriendRequest(String request);
     //获取当前用户的待处理的好友申请列表
     String getFriendRequests(String request);
+    //处理好友申请，根据申请的id和要修改的状态代码
+    String handleRequest(String request);
 }

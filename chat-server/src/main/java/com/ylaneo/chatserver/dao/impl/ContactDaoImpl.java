@@ -20,8 +20,8 @@ public class ContactDaoImpl implements ContactDao {
     public Result<List<User>> getFriendList(Integer currentUserId) {
         String sql="select u.username,u.nickname,u.avatar_url,u.status " +
                 "from user u " +
-                "inner join friend_relation fr on u.id = fr.user_id " +
-                "where u.id=? and fr.status=1";
+                "inner join friend_relation fr on u.id = fr.friend_id " + //这里应该是fr.friend_id而不是fr.user_id
+                "where fr.user_id=? and fr.status=1";
         try(Connection conn=new DBConnection().getConnection();
             PreparedStatement pt=conn.prepareStatement(sql)){
             //
@@ -100,7 +100,7 @@ public class ContactDaoImpl implements ContactDao {
         String sql="select fr.id as frId,fr.sender_id as senderId,u.username,u.nickname,u.avatar_url,fr.message as frMessage,fr.status,fr.create_time " +
                 "from friend_request fr " +
                 "inner join user u on fr.sender_id=u.id " +
-                "where receiver_id=? ";
+                "where (receiver_id=? and fr.status=0 ) ";
         try (Connection conn = new DBConnection().getConnection();
              PreparedStatement pt = conn.prepareStatement(sql)) {
             pt.setInt(1,receiverId);
@@ -125,4 +125,61 @@ public class ContactDaoImpl implements ContactDao {
             return Result.error("数据库错误:" + e.getMessage());
         }
     }
+
+    @Override
+    public Result handleRequest(Integer friendRequestId, Integer senderId, Integer receiverId, Integer status) {
+        /* 一个接口包含多个数据库操作的情况 */
+        String updateRequestSql = "update friend_request set status=? where id=? and status=0";
+        String insertRelationSql = "insert into friend_relation (user_id, friend_id, status) values (?, ?, 1)";
+        //
+        Connection conn = null;
+        try {
+            conn = new DBConnection().getConnection();
+            conn.setAutoCommit(false);//开启事务，关闭自动提交事务
+
+            //更新 friend_request的status字段
+            try (PreparedStatement pt = conn.prepareStatement(updateRequestSql)) {
+                pt.setInt(1, status);
+                pt.setInt(2, friendRequestId);
+                int rows = pt.executeUpdate();
+                if (rows == 0) {
+                    conn.rollback();//操作失败，执行回滚
+                    return Result.error("申请不存在或已被处理");
+                }
+            }
+
+            //接受好友申请，插入两条记录
+            if (status == 1) {
+                try (PreparedStatement pt = conn.prepareStatement(insertRelationSql)) {
+                    pt.setInt(1, senderId);
+                    pt.setInt(2, receiverId);
+                    pt.executeUpdate();
+                }//如果失败，异常抛到外层，被外层catch捕获
+                try (PreparedStatement pt = conn.prepareStatement(insertRelationSql)) {
+                    pt.setInt(1, receiverId);
+                    pt.setInt(2, senderId);
+                    pt.executeUpdate();
+                }//如果失败，异常抛到外层，被外层catch捕获
+            }
+
+            conn.commit();//全部操作成功，则提交事务
+            return Result.success("操作成功");
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); }//如果抛出异常，统一回滚
+                catch (SQLException ignored) {}
+            }
+            return Result.error("数据库错误:" + e.getMessage());
+
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);//无论成功失败，都要恢复自动提交
+                    conn.close();
+                } catch (SQLException ignored) {}
+            }
+        }
+    }
+
 }

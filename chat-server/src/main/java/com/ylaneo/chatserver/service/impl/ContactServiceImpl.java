@@ -130,4 +130,24 @@ public class ContactServiceImpl implements ContactService {
         }
         return response;
     }
+
+    @Override
+    public String handleRequest(String request) {
+        //1.解析出各个参数
+        List<String>params=requestHandler.handleParams(request);
+        Integer friendRequestId=Integer.valueOf(params.get(1));//
+        Integer senderId=Integer.valueOf(params.get(2));
+        Integer receiverId=Integer.valueOf(params.get(3));
+        Integer status=Integer.valueOf(params.get(4));
+        //2.调用dao的接口获得result对象数据
+        Result<User> r1=contactDao.handleRequest(friendRequestId,senderId,receiverId,status);
+        //3.根据不同的响应码组装不同的response返回信息
+        if(r1.getCode()==0){
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">";//按照顺序放入响应代码，响应信息，用户id，用户名，用户角色代码
+            return response;
+        }else{
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">";
+            return response;
+        }
+    }
 }
