@@ -67,13 +67,22 @@ public class UserInfoView extends JPanel {
         separator.setForeground(new Color(220, 220, 230));
         // 头像
         avatarLabel = new JLabel();
-        avatarLabel.setPreferredSize(new Dimension(200, 200));//头像尺寸设置
+//        avatarLabel.setPreferredSize(new Dimension(200, 200));//头像尺寸设置
         avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        avatarLabel.setVerticalAlignment(SwingConstants.CENTER);
 //        avatarLabel.setLayout(new GridBagLayout());//
         avatarLabel.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 210), 1));
         avatarLabel.setOpaque(true);
         avatarLabel.setBackground(new Color(240, 240, 245));
         avatarLabel.setAlignmentX(Component.CENTER_ALIGNMENT);//
+        //包裹一层容器为固定尺寸
+        JPanel avatarContainer = new JPanel(new BorderLayout());
+        avatarContainer.setPreferredSize(new Dimension(200, 200));
+        avatarContainer.setMaximumSize(new Dimension(200, 200));
+        avatarContainer.setOpaque(true);
+        avatarContainer.setBackground(new Color(245, 245, 250));
+        avatarContainer.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 230), 1));
+        avatarContainer.add(avatarLabel, BorderLayout.CENTER);
 
         // 头像下方说明
         JLabel avatarTip = new JLabel("点击下方按钮更换头像");
@@ -130,7 +139,8 @@ public class UserInfoView extends JPanel {
         contentPanel.add(separator);
         contentPanel.add(Box.createVerticalGlue());//一个弹性空间
         //
-        contentPanel.add(avatarLabel);
+//        contentPanel.add(avatarLabel);
+        contentPanel.add(avatarContainer);
         contentPanel.add(Box.createVerticalStrut(15));
         contentPanel.add(avatarTip);
         contentPanel.add(Box.createVerticalStrut(15));

@@ -165,8 +165,8 @@ public class ContactView extends JPanel {
 //        detailAvatar.setBackground(new Color(245, 245, 250));
 
         JPanel avatarContainer = new JPanel(new BorderLayout());
-        avatarContainer.setPreferredSize(new Dimension(160, 160));
-        avatarContainer.setMaximumSize(new Dimension(160, 160));
+        avatarContainer.setPreferredSize(new Dimension(200, 200));
+        avatarContainer.setMaximumSize(new Dimension(200, 200));
         avatarContainer.setOpaque(true);
         avatarContainer.setBackground(new Color(245, 245, 250));
         avatarContainer.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 230), 1));
@@ -577,7 +577,7 @@ public class ContactView extends JPanel {
         return row;
     }
     // ======================================== 加载好友列表 ========================================
-    //将用户头像加载到用户信息行的方法
+    //将用户头像加载到用户信息行的方法,还会指定尺寸
     private void loadAvatarInto(JLabel label, String path, int size) {
         if (path != null && !path.isEmpty() && new File(path).exists()) {
             ImageIcon icon = new ImageIcon(path);
@@ -604,20 +604,20 @@ public class ContactView extends JPanel {
         Integer userId=UserSession.getInstance().getCurrentUser().getUserid();
         List<User> friendList = contactFacade.getFriendList(userId).getData();
         // 暂用本地假数据演示
-        User u1 = new User();
-        u1.setUserid(101);
-        u1.setUsername("zhangsan");
-        u1.setNickname("张三");
-        u1.setAvatar_url("D:/files_D/avatar_chat_demo/user_2.png");
-        u1.setStatus(1);
-        friendList.add(u1);
-        User u2 = new User();
-        u2.setUserid(102);
-        u2.setUsername("lisi");
-        u2.setNickname(null);
-        u2.setAvatar_url(null);
-        u2.setStatus(0);
-        friendList.add(u2);
+//        User u1 = new User();
+//        u1.setUserid(101);
+//        u1.setUsername("zhangsan");
+//        u1.setNickname("张三");
+//        u1.setAvatar_url("D:/files_D/avatar_chat_demo/user_2.png");
+//        u1.setStatus(1);
+//        friendList.add(u1);
+//        User u2 = new User();
+//        u2.setUserid(102);
+//        u2.setUsername("lisi");
+//        u2.setNickname(null);
+//        u2.setAvatar_url(null);
+//        u2.setStatus(0);
+//        friendList.add(u2);
         renderFriendList(friendList);//渲染好友列表
     }
     //根据传入的好友用户列表信息渲染好友列表
@@ -650,7 +650,7 @@ public class ContactView extends JPanel {
         // 头像
         JLabel avatar = new JLabel();
         avatar.setPreferredSize(new Dimension(44, 44));
-        loadAvatarInto(avatar, friend.getAvatar_url(), 44);
+        loadAvatarInto(avatar, friend.getAvatar_url(), 44);//
         // 中间：昵称/用户名（备注优先 > 昵称 > 用户名）
         String display = getDisplayName(friend, null);
         JLabel nameLabel = new JLabel(display);
@@ -681,7 +681,7 @@ public class ContactView extends JPanel {
     }
     //在右侧页面显示被选中的好友信息
     private void showFriendDetail(User friend, String remark) {
-        loadAvatarInto(detailAvatar, friend.getAvatar_url(), 160);
+        loadAvatarInto(detailAvatar, friend.getAvatar_url(), 200);
         detailNickname.setText( (friend.getNickname() == null ? "-" : friend.getNickname()));
         detailUsername.setText( friend.getUsername());
         if (friend.getStatus() != null && friend.getStatus() == 1) {

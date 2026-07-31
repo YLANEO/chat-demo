@@ -100,6 +100,12 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<handleRequest>")) {
             ContactService contactService=new ContactServiceImpl();
             response=contactService.handleRequest(request);
+        } else if (request.startsWith("<isFriend>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.isFriend(request);
+        } else if (request.startsWith("<hasPendingRequest>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.hasPendingRequest(request);
         } else {
 //            response="<1><非法请求>";
             response = "<1>" + "<未知命令: " + request.substring(0, Math.min(20, request.length())) + ">";

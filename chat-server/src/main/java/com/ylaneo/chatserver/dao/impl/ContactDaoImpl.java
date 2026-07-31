@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class ContactDaoImpl implements ContactDao {
     @Override
     public Result<List<User>> getFriendList(Integer currentUserId) {
@@ -179,6 +180,49 @@ public class ContactDaoImpl implements ContactDao {
                     conn.close();
                 } catch (SQLException ignored) {}
             }
+        }
+    }
+
+    @Override
+    public Result<Integer> isFriend(Integer userId, Integer friendId) {
+        String sql="select status from friend_relation where user_id=? and friend_id=? ";
+        try(Connection conn=new DBConnection().getConnection();
+            PreparedStatement pt=conn.prepareStatement(sql)){
+            //
+            pt.setInt(1,userId);
+            pt.setInt(2,friendId);
+            //
+            ResultSet resultSet=pt.executeQuery();
+            Integer isFriendParam=-1;
+            if (resultSet.next()) {
+                isFriendParam = resultSet.getInt("status");
+            }
+            return Result.success(isFriendParam);
+        }catch (SQLException e){
+            return Result.error("数据库错误:" + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> hasPendingRequest(Integer senderId, Integer receiverId) {
+        //到底是单向验证好还是双向验证？细化区分业务的话，单向更好？
+//        String sql="select 1 from friend_request where ( ( (sender_id=? and receiver_id=?) or (receiver_id=? and sender_id=?) ) and status=0 ) ";
+        String sql="select 1 from friend_request where (  (sender_id=? and receiver_id=?)   and status=0 ) ";
+        try(Connection conn=new DBConnection().getConnection();
+            PreparedStatement pt=conn.prepareStatement(sql)){
+            //
+            pt.setInt(1,senderId);
+            pt.setInt(2,receiverId);
+//            pt.setInt(3,receiverId);
+//            pt.setInt(4,senderId);
+            ResultSet resultSet=pt.executeQuery();
+            Boolean hasPendingRequestParam=resultSet.next();//这样就可以返回布尔值，
+//            if(resultSet.next()){
+//                hasPendingRequestParam=resultSet.getInt("status");
+//            }
+            return Result.success(hasPendingRequestParam);
+        }catch (SQLException e){
+            return Result.error("数据库错误:" + e.getMessage());
         }
     }
 

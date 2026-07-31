@@ -150,4 +150,40 @@ public class ContactServiceImpl implements ContactService {
             return response;
         }
     }
+
+    @Override
+    public String isFriend(String request) {
+        //1.解析出各个参数
+        List<String>params=requestHandler.handleParams(request);
+        Integer userId=Integer.valueOf(params.get(1));//
+        Integer friendId=Integer.valueOf(params.get(2));
+        //2.调用dao的接口获得result对象数据
+        Result<Integer> r1=contactDao.isFriend(userId,friendId);
+        //3.根据不同的响应码组装不同的response返回信息
+        if(r1.getCode()==0){
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+r1.getData()+">";
+            return response;
+        }else{
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+r1.getData()+">";
+            return response;
+        }
+    }
+
+    @Override
+    public String hasPendingRequest(String request) {
+        //1.解析出各个参数
+        List<String>params=requestHandler.handleParams(request);
+        Integer senderId=Integer.valueOf(params.get(1));//
+        Integer receiverId=Integer.valueOf(params.get(2));
+        //2.调用dao的接口获得result对象数据
+        Result<Boolean> r1=contactDao.hasPendingRequest(senderId,receiverId);
+        //3.根据不同的响应码组装不同的response返回信息
+        if(r1.getCode()==0){
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+r1.getData()+">";
+            return response;
+        }else{
+            String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+r1.getData()+">";
+            return response;
+        }
+    }
 }

@@ -92,6 +92,19 @@ public class ContactFacadeImpl implements ContactFacade {
 
     @Override
     public Result sendFriendRequest(Integer senderId, Integer receiverId, String message) {
+        //发送好友申请前，进行验证二者是否已经是好友
+        if(isFriend(senderId,receiverId).getData()==1){
+            return Result.error("已经是好友，无需重复添加");
+        }
+        //检查两者之间是否已经存在已经发送并且没有处理的好友申请
+        Result<Boolean> sentByMe = hasPendingRequest(senderId, receiverId);
+        Result<Boolean> sentToMe = hasPendingRequest(receiverId, senderId);
+        if(sentByMe.getData()){
+            return Result.error("已向该用户发送申请，请勿重复发送");
+        }
+        if(sentToMe.getData()){
+            return Result.error("已收到待处理申请，请先进行处理");
+        }
         String request="<sendFriendRequest>"+"<"+senderId+">"+"<"+receiverId+">"+"<"+message+">";
         String response;//用于接收数据
         try {
@@ -172,6 +185,49 @@ public class ContactFacadeImpl implements ContactFacade {
             return Result.success(message);
         }else {
             //
+            return Result.error(message);
+        }
+    }
+
+    @Override
+    public Result<Integer> isFriend(Integer userId, Integer friendId) {
+        String request="<isFriend>"+"<"+userId+">"+"<"+friendId+">";
+        String response;
+        try{
+            response=requestSender.sendRequest(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //
+        List<String>r=responseHandler.handleParams(response);
+        Integer code=Integer.valueOf(r.get(0));
+        String message=r.get(1);
+        if(code==0){
+            Integer isFriendParam=Integer.valueOf(r.get(2));
+            return Result.success(isFriendParam);
+        }else {
+            return Result.error(message);
+        }
+    }
+
+    @Override
+    public Result<Boolean> hasPendingRequest(Integer senderId, Integer receiverId) {
+        String request="<hasPendingRequest>"+"<"+senderId+">"+"<"+receiverId+">";
+        String response;
+        try{
+            response=requestSender.sendRequest(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //
+        List<String>r=responseHandler.handleParams(response);
+        Integer code=Integer.valueOf(r.get(0));
+        String message=r.get(1);
+        if(code==0){
+//            Boolean hasPendingRequestParam=Boolean.getBoolean(r.get(2));
+            Boolean hasPendingRequestParam=Boolean.parseBoolean(r.get(2));//
+            return Result.success(hasPendingRequestParam);
+        }else {
             return Result.error(message);
         }
     }
