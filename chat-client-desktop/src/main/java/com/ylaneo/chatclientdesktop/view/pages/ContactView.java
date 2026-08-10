@@ -43,6 +43,8 @@ public class ContactView extends JPanel {
     private JPanel rightRequestsPanel;//好友申请页面
     // 当前选中的好友
     private User currentSelectedFriend;
+    //当前好友列表
+    private List<User> currentFriends = new ArrayList<>();
     // ======================================== 构造函数 ========================================
     public ContactView(){
         //
@@ -599,26 +601,44 @@ public class ContactView extends JPanel {
         return friend.getUsername();
     }
     //渲染好友列表的方法
-    private void loadContacts() {
-        //根据userid获取所有的好友列表
-        Integer userId=UserSession.getInstance().getCurrentUser().getUserid();
-        List<User> friendList = contactFacade.getFriendList(userId).getData();
-        // 暂用本地假数据演示
-//        User u1 = new User();
-//        u1.setUserid(101);
-//        u1.setUsername("zhangsan");
-//        u1.setNickname("张三");
-//        u1.setAvatar_url("D:/files_D/avatar_chat_demo/user_2.png");
-//        u1.setStatus(1);
-//        friendList.add(u1);
-//        User u2 = new User();
-//        u2.setUserid(102);
-//        u2.setUsername("lisi");
-//        u2.setNickname(null);
-//        u2.setAvatar_url(null);
-//        u2.setStatus(0);
-//        friendList.add(u2);
-        renderFriendList(friendList);//渲染好友列表
+//    public void loadContacts() {
+//        //根据userid获取所有的好友列表
+//        Integer userId=UserSession.getInstance().getCurrentUser().getUserid();
+//        List<User> friendList = contactFacade.getFriendList(userId).getData();
+//        renderFriendList(friendList);//渲染好友列表
+//    }
+    public void loadContacts() {
+        Integer userId = UserSession.getInstance().getCurrentUser().getUserid();
+        Result<List<User>> result = contactFacade.getFriendList(userId);
+
+        if (result.getCode() != 0 || result.getData() == null) {
+            currentFriends = new ArrayList<>();
+            renderFriendList(currentFriends);
+            return;
+        }
+
+        currentFriends = new ArrayList<>(result.getData());
+        renderFriendList(currentFriends);
+    }
+    //刷新好友在线状态
+    public void updateFriendStatus(Integer userId, Integer status) {
+        if (userId == null || status == null) {
+            return;
+        }
+
+        for (User friend : currentFriends) {
+            if (userId.equals(friend.getUserid())) {
+                friend.setStatus(status);
+                renderFriendList(currentFriends);
+
+                if (currentSelectedFriend != null &&
+                        userId.equals(currentSelectedFriend.getUserid())) {
+                    currentSelectedFriend.setStatus(status);
+                    showFriendDetail(currentSelectedFriend, null);
+                }
+                return;
+            }
+        }
     }
     //根据传入的好友用户列表信息渲染好友列表
     private void renderFriendList(List<User> friends) {
@@ -715,15 +735,8 @@ public class ContactView extends JPanel {
     //获得当前用户的好友列表信息
     private List<User> getCurrentFriendList() {
         //与loadContacts中数据保持一致，可改为全局缓存列表
-        List<User> list = new ArrayList<>();
-        User u1 = new User();
-        u1.setUserid(101); u1.setUsername("zhangsan"); u1.setNickname("张三");
-        u1.setAvatar_url("D:/files_D/avatar_chat_demo/user_2.png"); u1.setStatus(1);
-        list.add(u1);
-        User u2 = new User();
-        u2.setUserid(102); u2.setUsername("lisi"); u2.setNickname(null);
-        u2.setAvatar_url(null); u2.setStatus(0);
-        list.add(u2);
+        Integer currentUserId=UserSession.getInstance().getCurrentUser().getUserid();
+        List<User> list = contactFacade.getFriendList(currentUserId).getData();
         return list;
     }
     // ======================================== 按钮功能绑定 ========================================

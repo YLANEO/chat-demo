@@ -6,12 +6,17 @@ import com.ylaneo.chatclientdesktop.entity.Result;
 import com.ylaneo.chatclientdesktop.entity.User;
 import com.ylaneo.chatclientdesktop.facade.UserFacade;
 import com.ylaneo.chatclientdesktop.facade.impl.UserFacadeImpl;
+import com.ylaneo.chatclientdesktop.net.HeartbeatSender;
+import com.ylaneo.chatclientdesktop.net.PushListener;
 import com.ylaneo.chatclientdesktop.session.UserSession;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 
 public class LoginView extends JFrame {
 // ======================================== 组件定义 ========================================
@@ -94,6 +99,7 @@ public class LoginView extends JFrame {
 
         /* 修改 登录逻辑：登录按钮绑定监听事件
         把直接调用dao获得封装好的result修改为借助封装好的类获得需要的信息   */
+        //再次修改：在客户端建立一个新的socket连接的功能，并且调用服务端的registerPushSocket接口，根据用户的id保存socket连接到hashmap中
         loginButton.addActionListener(e->{
             String username=loginUserName.getText();
             String password=new String(loginPassword.getPassword());
@@ -112,6 +118,25 @@ public class LoginView extends JFrame {
                 user.setStatus(1);
                 //单例模式
                 UserSession.getInstance().login(user);
+                //建立推送长连接，并以该连接为参数启动两个线程(推送信息接收线程PushListener和心跳信息发送HeartbeatSender）
+                try {
+                    String serverHost = "localhost";//也就是127.0.0.1
+                    int serverPort = 20001;
+                    Socket pushSocket = new Socket(serverHost, serverPort);//新建一个客户端socket连接
+                    String registerMsg = "<registerPushSocket><" + user.getUserid() + ">";//
+                    //
+                    pushSocket.getOutputStream().write(registerMsg.getBytes());//向这个socket连接中进行写入，
+                    pushSocket.getOutputStream().flush();
+                    //
+                    UserSession.getInstance().setPushSocket(pushSocket);
+                    //
+                    new Thread(new PushListener(pushSocket)).start();//
+                    new Thread(new HeartbeatSender(pushSocket)).start();//
+                    System.out.println("推送连接建立成功");
+                } catch (IOException ex) {
+                    System.out.println("推送连接建立失败: " + ex.getMessage());
+                }
+                //建立推送长连接结束
                 //切换用户在线状态
                 userFacade.updateUserStatus(user.getUserid(), 1);
                 //关闭当前页面并打开主页面

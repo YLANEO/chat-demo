@@ -40,10 +40,11 @@ public class ContactFacadeImpl implements ContactFacade {
             for(int i=0;i<countList;i++){
                 User user=new User();
 //                int j=i*4+3;
-                user.setUsername(r.get(4*i+3));
-                user.setNickname(r.get(4*i+4));
-                user.setAvatar_url(r.get(4*i+5));
-                user.setStatus(Integer.valueOf(r.get(4*i+6)));
+                user.setUserid(Integer.valueOf(r.get(5*i+3)));
+                user.setUsername(r.get(5*i+4));
+                user.setNickname(r.get(5*i+5));
+                user.setAvatar_url(r.get(5*i+6));
+                user.setStatus(Integer.valueOf(r.get(5*i+7)));
                 friendList.add(user);
             }
             return Result.success(friendList);
@@ -227,6 +228,32 @@ public class ContactFacadeImpl implements ContactFacade {
 //            Boolean hasPendingRequestParam=Boolean.getBoolean(r.get(2));
             Boolean hasPendingRequestParam=Boolean.parseBoolean(r.get(2));//
             return Result.success(hasPendingRequestParam);
+        }else {
+            return Result.error(message);
+        }
+    }
+
+    @Override
+    public Result<List<Integer>> getFriendIds(Integer userId) {
+        String request="<getFriendIds>"+"<"+userId+">";
+        String response;
+        try{
+            response=requestSender.sendRequest(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //
+        List<String>r=responseHandler.handleParams(response);
+        Integer code=Integer.valueOf(r.get(0));
+        String message=r.get(1);
+        Integer countList=Integer.valueOf(r.get(2));//有几条数据
+        if(code==0){
+            List<Integer>friendIdList=new ArrayList<>();
+            for(int i=0;i<countList;i++){
+                Integer id=Integer.valueOf(r.get(i+3));
+                friendIdList.add(id);
+            }
+            return Result.success(friendIdList);
         }else {
             return Result.error(message);
         }

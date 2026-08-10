@@ -1,11 +1,14 @@
 package com.ylaneo.chatserver.service.impl;
 
+import com.ylaneo.chatserver.dao.ContactDao;
 import com.ylaneo.chatserver.dao.UserDao;
+import com.ylaneo.chatserver.dao.impl.ContactDaoImpl;
 import com.ylaneo.chatserver.dao.impl.UserDaoImpl;
 import com.ylaneo.chatserver.dto.RegisterDto;
 import com.ylaneo.chatserver.entity.Result;
 import com.ylaneo.chatserver.entity.User;
 import com.ylaneo.chatserver.service.UserService;
+import com.ylaneo.chatserver.socket.Server;
 import com.ylaneo.chatserver.util.RequestHandler;
 
 import java.util.List;
@@ -16,6 +19,7 @@ public class UserServiceImpl implements UserService {
 
     RequestHandler requestHandler=new RequestHandler();
     UserDao userDao=new UserDaoImpl();
+    ContactDao contactDao=new ContactDaoImpl();
 
 
     // ======================================== 接口实现类具体内容 ========================================
@@ -109,6 +113,11 @@ public class UserServiceImpl implements UserService {
         Integer userId=Integer.valueOf(params.get(1));
         Integer userStatus=Integer.valueOf(params.get(2));
         Result r=userDao.updateUserStatus(userId,userStatus);
+        //添加上一个广播的步骤
+        if (r.getCode() == 0) {
+            broadcastStatusUpdate(userId, userStatus);//关键的触发动作：当前用户的在线状态发生变化  这个动作。
+        }
+        //
         String response="<"+r.getCode()+">"+"<"+r.getMessage()+">";
         return response;
     }
@@ -148,5 +157,28 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    //当前用户在线状态发生变化时，拼接当前用户的id和变化后的status字段，并将该拼接信息推送给该用户的所有好友的客户端
+    private void broadcastStatusUpdate(Integer userId, Integer status) {
+        Result<List<Integer>> result = contactDao.getFriendIds(userId);//
+
+        if (result.getCode() != 0 || result.getData() == null) {
+            return;
+        }
+
+        String pushMessage = "<push><statusUpdate><" + userId + "><" + status + ">";
+
+        for (Integer friendId : result.getData()) {
+            Server.pushStatusUpdate(friendId, pushMessage);//按照该用户的好友的Id列表，挨个向其好友发送拼接后的在线状态更新消息pushMessage
+        }
+    }
+
+    //
+    public void markUserOfflineAndNotify(Integer userId) {
+        Result result = userDao.updateUserStatus(userId, 0);//更新数据库中的用户在线状态信息
+
+        if (result.getCode() == 0) {
+            broadcastStatusUpdate(userId, 0);//按照该用户的好友的Id列表，挨个向其好友推送在线状态更新消息
+        }
+    }
 
 }

@@ -36,6 +36,7 @@ public class ContactServiceImpl implements ContactService {
             response=response+"<"+countList+">";
             for(int i=0;i<countList;i++){
                 //不要忘记加尖括号<>
+                response=response+"<"+friendList.get(i).getUserid()+">";
                 response=response+"<"+friendList.get(i).getUsername()+">";
                 response=response+"<"+friendList.get(i).getNickname()+">";
                 response=response+"<"+friendList.get(i).getAvatar_url()+">";
@@ -185,5 +186,30 @@ public class ContactServiceImpl implements ContactService {
             String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">"+"<"+r1.getData()+">";
             return response;
         }
+    }
+
+    @Override
+    public String getFriendIds(String request) {
+        List<String> params=requestHandler.handleParams(request);
+        Integer userId=Integer.valueOf(params.get(1));
+        String response="";
+        Result r=contactDao.getFriendIds(userId);
+        //
+        if(r.getCode()==0){
+            List<Integer> friendIdList=(List<Integer>)r.getData();
+            int countList=friendIdList.size();
+            //
+            response=response+"<"+r.getCode()+">";
+            response=response+"<"+r.getMessage()+">";
+            response=response+"<"+countList+">";
+            for(int i=0;i<countList;i++){
+                //不要忘记加尖括号<>
+                response=response+"<"+friendIdList.get(i)+">";
+            }
+        }else {
+            response=response+"<"+r.getCode()+">";
+            response=response+"<"+r.getMessage()+">";
+        }
+        return response;
     }
 }

@@ -4,12 +4,14 @@ import com.ylaneo.chatserver.service.ContactService;
 import com.ylaneo.chatserver.service.UserService;
 import com.ylaneo.chatserver.service.impl.ContactServiceImpl;
 import com.ylaneo.chatserver.service.impl.UserServiceImpl;
+import com.ylaneo.chatserver.socket.Server;
 import com.ylaneo.chatserver.util.RequestHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.List;
 
 //server只需要与client建立socket连接然后把socket交给这个类，这个类中才进行数据的接受和发送，数据库操作，
 public class ServerThread extends Thread {
@@ -18,17 +20,18 @@ public class ServerThread extends Thread {
     InputStream is;
     OutputStream os;
     RequestHandler requestHandler=new RequestHandler();//用于解析数据流的类
-    public ServerThread(Socket s) {//构造函数，接受server传的socket对象，为这个类里面的socket对象赋值（与client连接的socket对象初始化）
+    public ServerThread(Socket s) {
+        //构造函数，接受server传的socket对象，为这个类里面的socket对象赋值（与client连接的socket对象初始化）
         socket = s;
     }
 
     // ======================================== 测试代码,只做参考，具体内容见下一个板块 ========================================
-    public void doSomeThing () {//这个方法中的就是server要提供给客户端的服务相关的代码吗？
+    /*public void doSomeThing () {//这个方法中的就是server要提供给客户端的服务相关的代码吗？
 
         try {
 //            byte[] buffer = new byte[65535];//为什么要用byte类进行一次转换，从InputStream转换成byte？？？
             byte[] buffer = new byte[65535];
-            /* 解释：InputStream 就像一个水龙头，它一点一点地往外滴数据（字节）。但数据不能悬在空中，你需要一个桶来接住它，这个桶就是 byte[] buffer。*/
+            *//* 解释：InputStream 就像一个水龙头，它一点一点地往外滴数据（字节）。但数据不能悬在空中，你需要一个桶来接住它，这个桶就是 byte[] buffer。*//*
 
             //这个socket对象是从Server类中传进来的，这个socket对象与客户端的socket对象是同一个对象？不是，但是连接的是同一个客户端socket对象
             is = socket.getInputStream();//
@@ -42,7 +45,7 @@ public class ServerThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     // ======================================== 数据库操作代码 & socket读取和发送代码 ========================================
 
@@ -106,7 +109,19 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<hasPendingRequest>")) {
             ContactService contactService=new ContactServiceImpl();
             response=contactService.hasPendingRequest(request);
-        } else {
+        } else if (request.startsWith("<getFriendIds>")) {
+            ContactService contactService=new ContactServiceImpl();
+            response=contactService.getFriendIds(request);
+        } else if (request.startsWith("<registerPushSocket>")) {//
+            //对于 <registerPushSocket> 请求，特殊处理：保持连接不关闭
+            List<String> params = requestHandler.handleParams(request);
+            Integer userId = Integer.valueOf(params.get(1));
+            Server.registerUser(userId, socket);
+            //建立长连接的同时，启动独立线程处理该连接的心跳。注意：每个在线用户都需要一个这个线程，可能有点浪费服务端资源？
+            new HeartbeatHandler(socket, userId).start();
+
+            return;  // 不发送响应，不关闭连接，线程自己管理
+        } else {//其他情况
 //            response="<1><非法请求>";
             response = "<1>" + "<未知命令: " + request.substring(0, Math.min(20, request.length())) + ">";
         }

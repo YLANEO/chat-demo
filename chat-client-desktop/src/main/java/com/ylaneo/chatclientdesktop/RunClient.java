@@ -14,6 +14,5 @@ public class RunClient {
 
         //创建窗口
         new LoginView();
-//        new MainView();
     }
 }

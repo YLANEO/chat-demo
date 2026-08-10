@@ -14,6 +14,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.net.Socket;
 
 public class MainView extends JFrame {
     // ======================================== 组件 ========================================
@@ -136,6 +138,16 @@ public class MainView extends JFrame {
             UserFacade userFacade=new UserFacadeImpl();
             userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
             UserSession.getInstance().logout();
+            //新增：关键！！！！！关闭socket连接，间接结束了推送PushListener线程和心跳线程HeartbeatSender
+            Socket pushSocket = UserSession.getInstance().getPushSocket();
+            if (pushSocket != null && !pushSocket.isClosed()) {
+                try {
+                    pushSocket.close();//直接进行一个socket的关闭
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            //
             dispose();//关闭当前窗口
             new LoginView();
         });

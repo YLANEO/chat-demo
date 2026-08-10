@@ -20,4 +20,6 @@ public interface ContactService {
     String isFriend(String request);
     //检查是否已有待处理（status=0）的好友申请（注意需要双向验证，即需要调用两次）0-没有；1-有
     String hasPendingRequest(String request);
+    //根据用户ID获取其所有好友的userId列表
+    String getFriendIds(String request);
 }

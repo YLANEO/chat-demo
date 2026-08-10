@@ -25,7 +25,7 @@ public class RequestSender {
         //这里socket的创建交给下面的sendrequest方法完成，因为
         try{
             System.out.println("开始尝试与server建立socket连接");
-            socket=new Socket("127.0.0.1",20001);//与server建立连接
+            socket=new Socket("127.0.0.1",20001);//与server建立连接，这里就是客户端向服务端敲门的动作
             is=socket.getInputStream();
             os=socket.getOutputStream();
             System.out.println("成功与server建立socket连接");
@@ -45,9 +45,9 @@ public class RequestSender {
         int len=is.read(buffer);//将从server流出来的数据用容器变量buffer来接收
         System.out.println("接收到server发来的长度为: "+ len +"的数据: "+new String(buffer,0,len) );//这么写才是数据对应的字符串数据，不然字符串会自动用空字符填写
 
-        //关闭socket连接
+        //关闭socket连接，因此：这里面的socket连接是短连接
         socket.close();
-        System.out.println("关闭socket连接");
+        System.out.println("关闭socket短连接");
 
         //返回收到的数据
         //return new String(buffer);//转换成String之后返回

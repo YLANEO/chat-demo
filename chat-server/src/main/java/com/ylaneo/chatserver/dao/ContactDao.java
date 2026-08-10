@@ -22,4 +22,6 @@ public interface ContactDao {
     Result<Integer> isFriend(Integer userId,Integer friendId);
     //检查是否已有待处理（status=0）的好友申请（注意需要双向验证，即需要调用两次）0-没有；1-有
     public Result<Boolean> hasPendingRequest(Integer senderId, Integer receiverId);
+    // 根据用户ID获取所有好友的userId列表
+    Result<List<Integer>> getFriendIds(Integer userId);
 }

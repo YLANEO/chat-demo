@@ -19,7 +19,7 @@ import java.util.List;
 public class ContactDaoImpl implements ContactDao {
     @Override
     public Result<List<User>> getFriendList(Integer currentUserId) {
-        String sql="select u.username,u.nickname,u.avatar_url,u.status " +
+        String sql="select u.id,u.username,u.nickname,u.avatar_url,u.status " +
                 "from user u " +
                 "inner join friend_relation fr on u.id = fr.friend_id " + //这里应该是fr.friend_id而不是fr.user_id
                 "where fr.user_id=? and fr.status=1";
@@ -34,6 +34,7 @@ public class ContactDaoImpl implements ContactDao {
             //遍历将查到的数据添加到列表中
             while(resultSet.next()){
                 User user=new User();
+                user.setUserid(resultSet.getInt("id"));
                 user.setUsername(resultSet.getString("username"));
                 user.setNickname(resultSet.getString("nickname"));
                 user.setAvatar_url(resultSet.getString("avatar_url"));
@@ -222,6 +223,23 @@ public class ContactDaoImpl implements ContactDao {
 //            }
             return Result.success(hasPendingRequestParam);
         }catch (SQLException e){
+            return Result.error("数据库错误:" + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<Integer>> getFriendIds(Integer userId) {
+        String sql = "select friend_id from friend_relation where user_id=? and status=1";
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement pt = conn.prepareStatement(sql)) {
+            pt.setInt(1, userId);
+            ResultSet resultSet = pt.executeQuery();
+            List<Integer> friendIds = new ArrayList<>();
+            while (resultSet.next()) {
+                friendIds.add(resultSet.getInt("friend_id"));
+            }
+            return Result.success(friendIds);
+        } catch (SQLException e) {
             return Result.error("数据库错误:" + e.getMessage());
         }
     }
