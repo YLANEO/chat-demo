@@ -19,6 +19,7 @@ public class UserSession {
 
     //这个session包含的方法
     public static UserSession getInstance(){
+        //
         return userSession;
     }
     //获取当前登录的用户的实例
@@ -43,6 +44,7 @@ public class UserSession {
     }
     //返回这个socket引用，方便进行关闭
     public Socket getPushSocket() {
+        //
         return pushSocket;
     }
 }

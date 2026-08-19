@@ -15,6 +15,8 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -121,9 +123,10 @@ public class ContactView extends JPanel {
         leftPanel.add(topPanel, BorderLayout.NORTH);
         leftPanel.add(scroll, BorderLayout.CENTER);
         //监听本地好友搜索：过滤已显示的列表
-        searchFriendField.addKeyListener(new java.awt.event.KeyAdapter() {
+        searchFriendField.addKeyListener(new KeyAdapter() {
+            //
             @Override
-            public void keyReleased(java.awt.event.KeyEvent e) {
+            public void keyReleased(KeyEvent e) {
                 filterFriendList(searchFriendField.getText().trim());
             }
         });
@@ -560,12 +563,15 @@ public class ContactView extends JPanel {
         final FriendRequestDto finalItem = item;
         row.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
+                //
                 showFriendRequestDetailDialog(finalItem);//展示选中行的备注信息弹窗
             }
             @Override public void mouseEntered(MouseEvent e) {
+                //
                 row.setBackground(new Color(245, 245, 250));
             }
             @Override public void mouseExited(MouseEvent e) {
+                //
                 row.setBackground(Color.WHITE);
             }
         });
@@ -690,9 +696,16 @@ public class ContactView extends JPanel {
         row.add(statusLabel, BorderLayout.EAST);
         // 点击/悬停效果
         row.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { row.setBackground(new Color(230, 238, 255)); }
-            @Override public void mouseExited(MouseEvent e)  { row.setBackground(Color.WHITE); }
+            @Override public void mouseEntered(MouseEvent e) {
+                //
+                row.setBackground(new Color(230, 238, 255));
+            }
+            @Override public void mouseExited(MouseEvent e)  {
+                //
+                row.setBackground(Color.WHITE);
+            }
             @Override public void mouseClicked(MouseEvent e) {
+                //
                 currentSelectedFriend = friend;//
                 showFriendDetail(friend, null);//显示选中用户的信息到右侧页面
             }

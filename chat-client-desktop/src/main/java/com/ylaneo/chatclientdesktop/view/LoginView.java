@@ -127,9 +127,9 @@ public class LoginView extends JFrame {
                     //
                     pushSocket.getOutputStream().write(registerMsg.getBytes());//向这个socket连接中进行写入，
                     pushSocket.getOutputStream().flush();
-                    //
+                    //将socket连接存入Usersession中，方便退出登录时关闭该socket连接
                     UserSession.getInstance().setPushSocket(pushSocket);
-                    //
+                    //将这个socket对象作为参数，创建两个线程
                     new Thread(new PushListener(pushSocket)).start();//
                     new Thread(new HeartbeatSender(pushSocket)).start();//
                     System.out.println("推送连接建立成功");

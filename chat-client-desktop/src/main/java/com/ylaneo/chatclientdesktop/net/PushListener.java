@@ -67,7 +67,7 @@ public class PushListener implements Runnable {
             }
             System.out.println("线程PushListener结束");
         } catch (IOException e) {
-            System.out.println("推送连接断开: " + e.getMessage());
+            System.out.println("检测到推送socket连接断开，结束PushListener线程 : " + e.getMessage());
         }
     }
     //根据服务端的信息，更新好友在线状态

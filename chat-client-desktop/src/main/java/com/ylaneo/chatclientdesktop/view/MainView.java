@@ -32,15 +32,42 @@ public class MainView extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
         //监听窗口关闭事件，并将用户状态修改为离线
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                //获取当前用户信息，并根据该信息修改数据库中的在线状态
-                UserFacade userFacade=new UserFacadeImpl();
-                userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
-            }
-        });
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        addWindowListener(new WindowAdapter() {
+//            //
+//            @Override
+//            public void windowClosing(WindowEvent e) {
+//                //获取当前用户信息，并根据该信息修改数据库中的在线状态
+//                UserFacade userFacade=new UserFacadeImpl();
+//                userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
+//            }
+//        });
+//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        //修改窗口关闭事件：手动结束线程（Pushlistener和HeartbeatSender）。而非直接结束整个进程，导致线程可能没有正确结束
+//        addWindowListener(new WindowAdapter() {
+//            @Override
+//            public void windowClosing(WindowEvent e) {
+//                // 1. 清理 socket
+//                Socket pushSocket = UserSession.getInstance().getPushSocket();
+//                if (pushSocket != null && !pushSocket.isClosed()) {
+//                    try {
+//                        pushSocket.close();
+//                    } catch (IOException ex) {
+//                        ex.printStackTrace();
+//                    }
+//                }
+//                // 2. 改数据库状态
+//                if (UserSession.getInstance().isLoggedIn()) {
+//                    new UserFacadeImpl().updateUserStatus(
+//                            UserSession.getInstance().getCurrentUser().getUserid(),
+//                            0
+//                    );
+//                }
+//                // 3. 退出
+//                System.exit(0);
+//            }
+//        });
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);  // 禁用默认退出，自己控制
         //修改Jframe的默认内容容器为一个Jpanel，方便后面控制，相当于背景板
         JPanel backPanel=new JPanel();
         backPanel.setLayout(new BorderLayout());
@@ -80,13 +107,23 @@ public class MainView extends JFrame {
         //
         nav.add(jButtonLogout);
         //切换卡片功能
-        navMessage.addActionListener(e->cardLayout.show(contentPanel,"message"));
-        navContact.addActionListener(e->cardLayout.show(contentPanel,"contact"));
-        navUserInfo.addActionListener(e->cardLayout.show(contentPanel,"userinfo"));
+        navMessage.addActionListener(e->{
+            cardLayout.show(contentPanel,"message");
+            updateNavButtonStyles(navMessage);
+        });
+        navContact.addActionListener(e->{
+            cardLayout.show(contentPanel,"contact");
+            updateNavButtonStyles(navContact);
+        });
+        navUserInfo.addActionListener(e->{
+            cardLayout.show(contentPanel,"userinfo");
+            updateNavButtonStyles(navUserInfo);
+        });
         //
         return nav;
     }
     // ======================================== 统一添加按钮的方法 ========================================
+    //统一创建按钮的方法
     JButton createNavButton(String buttonText){
         JButton jButton=new JButton(buttonText);
         jButton.setHorizontalAlignment(SwingConstants.LEFT);//对齐方式
@@ -97,6 +134,13 @@ public class MainView extends JFrame {
         jButton.setBorderPainted(false);//边框
         jButton.setContentAreaFilled(false);//填充
         jButton.setCursor(new Cursor(Cursor.HAND_CURSOR));//鼠标悬停
+
+        //保存默认背景色
+        Color defaultBg = new Color(175, 159, 248);
+        jButton.setOpaque(true);
+        jButton.setBackground(defaultBg);
+        //标记为非选中状态
+        jButton.putClientProperty("selected", false);
         //
         jButton.addMouseListener(new MouseAdapter() {
             //悬停
@@ -110,18 +154,44 @@ public class MainView extends JFrame {
             @Override
             public void mouseExited(MouseEvent e) {
 //                super.mouseExited(e);
-                jButton.setOpaque(false);//设置为不透明
+                jButton.setOpaque(true);//设置为不透明
+                jButton.setBackground(defaultBg);//恢复成默认背景颜色
+                // 判断是否是选中状态
+                Boolean isSelected = (Boolean) jButton.getClientProperty("selected");
+                if (isSelected != null && isSelected) {
+                    // 是选中按钮，恢复选中颜色
+                    jButton.setBackground(new Color(218, 132, 239));
+                } else {
+                    // 非选中按钮，恢复默认颜色
+                    jButton.setBackground(new Color(175, 159, 248));
+                }
             }
         });
 
         return jButton;
     }
+    //统一修改按钮样式的方法(点击按钮改变其背景颜色，方便区别当前页面)
+    private void updateNavButtonStyles(JButton selectedButton) {
+        // 默认样式
+        Color defaultBg = new Color(175, 159, 248);  // 与导航栏背景色一致
+        Color selectedBg = new Color(218, 132, 239);  // 更深的颜色表示选中
 
+        // 重置所有按钮
+        JButton[] allButtons = {navMessage, navContact, navUserInfo};
+        //
+        for (JButton btn : allButtons) {
+            btn.putClientProperty("selected", false);// 标记其他按钮为为非选中
+            btn.setBackground(defaultBg);
+        }
+        // 标记当前按钮为选中状态
+        selectedButton.putClientProperty("selected", true);
+        selectedButton.setBackground(selectedBg);
+    }
     // ======================================== 创建内容部分并返回 ========================================
     JPanel contentArea(){
         //
-         contentPanel.add(new MessageView(),    "message");
-         contentPanel.add(new ContactView(), "contact");
+        contentPanel.add(new MessageView(),    "message");
+        contentPanel.add(new ContactView(), "contact");
         contentPanel.add(new UserInfoView(),"userinfo");
         contentPanel.add(new UserInfoView_1(),"userinfo1");
         return contentPanel;

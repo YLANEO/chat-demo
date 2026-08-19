@@ -1,8 +1,10 @@
 package com.ylaneo.chatserver.handler;
 
 import com.ylaneo.chatserver.service.ContactService;
+import com.ylaneo.chatserver.service.MessageService;
 import com.ylaneo.chatserver.service.UserService;
 import com.ylaneo.chatserver.service.impl.ContactServiceImpl;
+import com.ylaneo.chatserver.service.impl.MessageServiceImpl;
 import com.ylaneo.chatserver.service.impl.UserServiceImpl;
 import com.ylaneo.chatserver.socket.Server;
 import com.ylaneo.chatserver.util.RequestHandler;
@@ -112,6 +114,9 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<getFriendIds>")) {
             ContactService contactService=new ContactServiceImpl();
             response=contactService.getFriendIds(request);
+        } else if (request.startsWith("<getAllMessage>")) {
+            MessageService messageService=new MessageServiceImpl();
+            response=messageService.getAllMessage(request);
         } else if (request.startsWith("<registerPushSocket>")) {//
             //对于 <registerPushSocket> 请求，特殊处理：保持连接不关闭
             List<String> params = requestHandler.handleParams(request);
