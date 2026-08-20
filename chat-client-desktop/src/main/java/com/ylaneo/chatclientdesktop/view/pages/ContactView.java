@@ -626,26 +626,7 @@ public class ContactView extends JPanel {
         currentFriends = new ArrayList<>(result.getData());
         renderFriendList(currentFriends);
     }
-    //刷新好友在线状态
-    public void updateFriendStatus(Integer userId, Integer status) {
-        if (userId == null || status == null) {
-            return;
-        }
 
-        for (User friend : currentFriends) {
-            if (userId.equals(friend.getUserid())) {
-                friend.setStatus(status);
-                renderFriendList(currentFriends);
-
-                if (currentSelectedFriend != null &&
-                        userId.equals(currentSelectedFriend.getUserid())) {
-                    currentSelectedFriend.setStatus(status);
-                    showFriendDetail(currentSelectedFriend, null);
-                }
-                return;
-            }
-        }
-    }
     //根据传入的好友用户列表信息渲染好友列表
     private void renderFriendList(List<User> friends) {
         friendListPanel.removeAll();
@@ -805,6 +786,42 @@ public class ContactView extends JPanel {
         } else {
             JOptionPane.showMessageDialog(this, "操作失败：" + result.getMessage());
         }
+    }
+
+    // ======================================== 推送信息ui更新相关的方法 ========================================
+    //更新好友的在线状态
+    public void updateFriendStatus(Integer userId, Integer status) {
+        if (userId == null || status == null) {
+            return;
+        }
+
+        for (User friend : currentFriends) {
+            if (userId.equals(friend.getUserid())) {
+                friend.setStatus(status);
+                renderFriendList(currentFriends);
+
+                if (currentSelectedFriend != null &&
+                        userId.equals(currentSelectedFriend.getUserid())) {
+                    currentSelectedFriend.setStatus(status);
+                    showFriendDetail(currentSelectedFriend, null);
+                }
+                return;
+            }
+        }
+    }
+    //更新新增好友到好友列表中
+    public void addFriend(User friend) {
+        if (friend == null || friend.getUserid() == null) {
+            return;
+        }
+        //防止重复添加
+        for (User u : currentFriends) {
+            if (u.getUserid().equals(friend.getUserid())) {
+                return;
+            }
+        }
+        currentFriends.add(friend);
+        renderFriendList(currentFriends);
     }
 
 }

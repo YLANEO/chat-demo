@@ -209,6 +209,7 @@ public class UserFacadeImpl implements UserFacade {
             String userAvatarUrl=r.get(4);
             Integer status=Integer.valueOf(r.get(5));
             //
+            user.setUserid(userId);
             user.setUsername(username);
             user.setNickname(nickname);
             user.setAvatar_url(userAvatarUrl);

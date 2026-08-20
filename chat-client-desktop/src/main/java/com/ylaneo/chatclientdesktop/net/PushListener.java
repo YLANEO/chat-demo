@@ -1,5 +1,7 @@
 package com.ylaneo.chatclientdesktop.net;
 
+import com.ylaneo.chatclientdesktop.event.ContactViewEvent;
+import com.ylaneo.chatclientdesktop.event.MessageViewEvent;
 import com.ylaneo.chatclientdesktop.util.ResponseHandler;
 import com.ylaneo.chatclientdesktop.view.MainView;
 import com.ylaneo.chatclientdesktop.view.pages.ContactView;
@@ -15,6 +17,9 @@ import java.util.List;
 //获取服务端来的推送信息，进行信息更新
 public class PushListener implements Runnable {
     private Socket socket;
+    ResponseHandler responseHandler = new ResponseHandler();
+    ContactViewEvent contactViewEvent=new ContactViewEvent();
+    MessageViewEvent messageViewEvent=new MessageViewEvent();
 
     public PushListener(Socket socket) {
         //
@@ -73,73 +78,14 @@ public class PushListener implements Runnable {
     }
     //根据服务端的信息，更新好友在线状态
     private void handlePush(String msg) {
-        if (!msg.startsWith("<push><statusUpdate>")) {
+        if(msg.startsWith("<push><statusUpdate>")){
+            contactViewEvent.handleRefreshContactViewFriendStatus(msg);
+            messageViewEvent.handleRefreshMessageViewFriendStatus(msg);
+        } else if(msg.startsWith("<push><friendListUpdate>")){
+            contactViewEvent.handleRefreshContactViewFriendList(msg);
+            messageViewEvent.handleRefreshMessageViewFriendList(msg);
+        } else {
             return;
-        }
-
-        ResponseHandler responseHandler = new ResponseHandler();
-        List<String> params = responseHandler.handleParams(msg);
-
-        if (params.size() < 4) {
-            return;
-        }
-
-        Integer userId;
-        Integer status;
-
-        try {
-            userId = Integer.valueOf(params.get(2));
-            status = Integer.valueOf(params.get(3));
-        } catch (NumberFormatException e) {
-            return;
-        }
-
-        Integer finalUserId = userId;
-        Integer finalStatus = status;
-
-        SwingUtilities.invokeLater(() -> refreshContactView(finalUserId, finalStatus));//更新：根据要修改的好友的id和status，
-        SwingUtilities.invokeLater(() -> refreshMessageView(finalUserId, finalStatus));
-    }
-    //更新mainview-contactview窗口中的显示信息
-    private void refreshContactView(Integer userId, Integer status) {//更新好友在线状态
-        Window[] windows = Window.getWindows();//获得当前的所有窗口
-        //
-        for (Window window : windows) {
-            if (!(window instanceof MainView)) {//如果找到的窗口不是MainView的一个实例
-                continue;//直接跳过这次循环之后的内容，进入下一次循环
-            }
-            if (!window.isDisplayable()) continue;//  关键这一行，不然会找到已经被dispose，但是还残留在内存里的窗口。
-
-            MainView mainView = (MainView) window;//找到了主页面mainview
-
-            for (Component component : mainView.contentPanel.getComponents()) {
-                if (component instanceof ContactView) {
-                    ContactView contactView = (ContactView) component;//找到主页面中的好友页面contactview
-                    contactView.updateFriendStatus(userId, status);//更新好友页面：根据好友的id和status字段，更新该好友的在线状态
-                    return;
-                }
-            }
-        }
-    }
-    //更新mainview-contactview窗口中的显示信息
-    private void refreshMessageView(Integer userId, Integer status) {//更新好友在线状态
-        Window[] windows = Window.getWindows();//获得当前的所有窗口
-        //
-        for (Window window : windows) {
-            if (!(window instanceof MainView)) {//如果找到的窗口不是MainView的一个实例
-                continue;//直接跳过这次循环之后的内容，进入下一次循环
-            }
-            if (!window.isDisplayable()) continue;//  关键这一行，不然会找到已经被dispose，但是还残留在内存里的窗口。
-
-            MainView mainView = (MainView) window;//找到了主页面mainview
-
-            for (Component component : mainView.contentPanel.getComponents()) {
-                if (component instanceof MessageView) {
-                    MessageView messageView = (MessageView) component;//找到主页面中的好友页面contactview
-                    messageView.updateFriendStatus(userId, status);//更新好友页面：根据好友的id和status字段，更新该好友的在线状态
-                    return;
-                }
-            }
         }
     }
 

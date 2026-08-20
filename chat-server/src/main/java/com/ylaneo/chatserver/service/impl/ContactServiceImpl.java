@@ -9,6 +9,7 @@ import com.ylaneo.chatserver.entity.FriendRequest;
 import com.ylaneo.chatserver.entity.Result;
 import com.ylaneo.chatserver.entity.User;
 import com.ylaneo.chatserver.service.ContactService;
+import com.ylaneo.chatserver.socket.Server;
 import com.ylaneo.chatserver.util.RequestHandler;
 
 import java.util.ArrayList;
@@ -144,6 +145,14 @@ public class ContactServiceImpl implements ContactService {
         Result<User> r1=contactDao.handleRequest(friendRequestId,senderId,receiverId,status);
         //3.根据不同的响应码组装不同的response返回信息
         if(r1.getCode()==0){
+            //实时更新好友列表的推送消息
+            if (r1.getCode() == 0 && status == 1) {
+                //推送消息给申请者(senderId)，告诉他receiver已成为好友
+                Server.pushStatusUpdate(senderId, "<push><friendListUpdate><" + receiverId + ">");
+                //推送消息给接收者(receiverId)，告诉他sender已成为好友
+                Server.pushStatusUpdate(receiverId, "<push><friendListUpdate><" + senderId + ">");
+            }
+            //
             String response="<"+r1.getCode()+">"+"<"+r1.getMessage()+">";//按照顺序放入响应代码，响应信息，用户id，用户名，用户角色代码
             return response;
         }else{

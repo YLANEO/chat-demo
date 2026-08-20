@@ -49,7 +49,6 @@ public class MessageView extends JPanel {
     private JPanel center;//聊天信息区域
     private JScrollPane chatScroll;//放置center的可滚动容器
     private JPanel buttom;//发送消息区域
-
     private JButton sendMessageBtn;
     private JPanel rightPlaceholder;//右侧默认占位
     private JPanel rightChatPanel;//右侧聊天页面容器（根据点击的用户切换）
@@ -189,7 +188,7 @@ public class MessageView extends JPanel {
         //
         center=new JPanel();
         center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
-        center.setBackground(new Color(255, 255, 255));
+        center.setBackground(new Color(240, 240, 245,255));
         chatScroll = new JScrollPane(center);//创建可滚动容器，将聊天区域放进去
         chatScroll.setBorder(null);
         chatScroll.getVerticalScrollBar().setUnitIncrement(30);//每次滚动的像素数量
@@ -197,14 +196,37 @@ public class MessageView extends JPanel {
         //底部：消息输入区
         //
         JPanel buttom=new JPanel();
-        buttom.setLayout(new BorderLayout());
+        buttom.setPreferredSize(new Dimension(9999,300));
+        buttom.setLayout(new BoxLayout(buttom,BoxLayout.Y_AXIS));
+        buttom.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 210),1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        ));
+        JTextArea messageArea=new JTextArea();//消息输入区
+        messageArea.setPreferredSize(new Dimension(9999,250));
+        messageArea.setMaximumSize(new Dimension(9999, 250));
+        messageArea.setFont(new Font("微软雅黑",Font.PLAIN,15));
+        messageArea.setBackground(new Color(255,255,255));
         sendMessageBtn = new JButton("发送消息");// 发送消息按钮
         styleButton(sendMessageBtn, new Color(66, 133, 244));
-//        sendMessageBtn.setPreferredSize(new Dimension(70, 35));
         sendMessageBtn.addActionListener(e -> handleSendMessage());
-        sendMessageBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sendMessageBtn.setAlignmentX(RIGHT_ALIGNMENT);
         sendMessageBtn.setPreferredSize(new Dimension(80,40));
         sendMessageBtn.setMaximumSize(new Dimension(80, 40));//关键：锁死宽度
+        JPanel sendMessageBtnContainer = new JPanel();
+        sendMessageBtnContainer.setLayout(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        sendMessageBtnContainer.setBackground(new Color(255,255,255));
+//        sendMessageBtnContainer.setOpaque(true);
+        sendMessageBtnContainer.setBorder(BorderFactory.createCompoundBorder(
+//                BorderFactory.createMatteBorder(0, 1, 0, 0, new Color(138, 138, 138)),
+                BorderFactory.createLineBorder(new Color(200, 200, 210),1),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        sendMessageBtnContainer.add(sendMessageBtn);
+        buttom.add(messageArea);
+//        buttom.add(Box.createVerticalStrut(5));
+        buttom.add(sendMessageBtnContainer);
+        root.add(buttom,BorderLayout.SOUTH);
 
 
 
@@ -805,5 +827,20 @@ public class MessageView extends JPanel {
         }
     }
 
+    // ======================================== 推送信息ui更新相关的方法 ========================================
+    //在 MessageView 类内部新增
+    public void addFriend(User friend) {
+        if (friend == null || friend.getUserid() == null) {
+            return;
+        }
+        //防止重复添加
+        for (User u : currentFriends) {
+            if (u.getUserid().equals(friend.getUserid())) {
+                return;
+            }
+        }
+        currentFriends.add(friend);
+        renderFriendList(currentFriends);
+    }
 
 }
