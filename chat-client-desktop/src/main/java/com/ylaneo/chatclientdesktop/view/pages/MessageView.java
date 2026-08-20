@@ -510,13 +510,12 @@ public class MessageView extends JPanel {
         for (User friend : currentFriends) {
             if (userId.equals(friend.getUserid())) {
                 friend.setStatus(status);
-                renderFriendList(currentFriends);
+                renderFriendList(currentFriends);//刷新好友列表中的在线状态
 
                 if (currentSelectedFriend != null &&
                         userId.equals(currentSelectedFriend.getUserid())) {
                     currentSelectedFriend.setStatus(status);
-//                    showFriendDetail(currentSelectedFriend, null);
-                    showChatPanel(currentSelectedFriend,null);
+                    showChatPanel(currentSelectedFriend,null);//刷新消息页面中的在线状态
                 }
                 return;
             }

@@ -17,8 +17,8 @@ public class HeartbeatSender extends Thread {
     public void run() {
         while (running) {
             try {
-                Thread.sleep(3000);// 每30秒发送一次心跳
-
+                Thread.sleep(30000);// 每30秒发送一次心跳
+                //这里也有问题：这里采用的是轮询检测socket有没有断开连接，可能还没来得及执行这个if判断语句就关闭窗口了，可能导致这个线程还没有结束？吗？
                 if (socket.isClosed()) {//在Mainview中关闭了socket连接之后，这个线程也就结束了
                     System.out.println("HeartbeatSender线程结束 ");
                     break;

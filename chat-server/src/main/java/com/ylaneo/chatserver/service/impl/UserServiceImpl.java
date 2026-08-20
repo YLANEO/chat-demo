@@ -159,7 +159,7 @@ public class UserServiceImpl implements UserService {
 
     //当前用户在线状态发生变化时，拼接当前用户的id和变化后的status字段，并将该拼接信息推送给该用户的所有好友的客户端
     private void broadcastStatusUpdate(Integer userId, Integer status) {
-        Result<List<Integer>> result = contactDao.getFriendIds(userId);//
+        Result<List<Integer>> result = contactDao.getFriendIds(userId);//获取当前用户的所有好友的id
 
         if (result.getCode() != 0 || result.getData() == null) {
             return;
@@ -167,6 +167,7 @@ public class UserServiceImpl implements UserService {
 
         String pushMessage = "<push><statusUpdate><" + userId + "><" + status + ">";
 
+        //广播给当前用户的所有好友，根据当前用户的所有好友的id
         for (Integer friendId : result.getData()) {
             Server.pushStatusUpdate(friendId, pushMessage);//按照该用户的好友的Id列表，挨个向其好友发送拼接后的在线状态更新消息pushMessage
         }

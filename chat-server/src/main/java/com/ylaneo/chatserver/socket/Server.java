@@ -35,7 +35,7 @@ public class Server {
         }
 
         try {
-            //避免多个线程同时写同一个 socket
+            //加锁，避免多个线程同时写同一个 socket
             synchronized (socket) {
                 socket.getOutputStream().write(message.getBytes());//
                 socket.getOutputStream().flush();
