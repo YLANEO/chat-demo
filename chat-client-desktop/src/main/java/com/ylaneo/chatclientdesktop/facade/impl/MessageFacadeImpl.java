@@ -64,5 +64,87 @@ public class MessageFacadeImpl implements MessageFacade {
             return Result.error("获取消息列表信息失败:"+message);
         }
     }
+
+    @Override
+    public Result<ChatMessage> sendMessage(Integer senderId, Integer receiverId, Integer type, String content, Integer status) {
+        //通过socket获得字符串格式的数据
+        String request="<sendMessage>"+"<"+senderId+">"+"<"+receiverId+">"+"<"+type+">"+"<"+content+">"+"<"+status+">";//组装request从requestsender拿到service层中
+        String response;//用于接收数据
+        try {
+            response= requestSender.sendRequest(request);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        //将String转换为列表形式
+        List<String> r=responseHandler.handleParams(response);
+        //将列表中的数据取出，并将String类型转为正确的数据类型
+        int code=Integer.valueOf(r.get(0)) ;//响应码，根据其不同对应之后的不同操作
+        String message=r.get(1);//响应信息
+        if(code==0){
+            ChatMessage chatMessage=new ChatMessage();
+            //注意有些字段可以直接从函数参数中获取
+            chatMessage.setChatMessageId(Integer.valueOf(r.get(2)));
+            chatMessage.setSenderId(senderId);
+            chatMessage.setReceiverId(receiverId);
+            chatMessage.setType(type);
+            chatMessage.setContent(content);
+            //这里处理LocalDateTime类
+            String readAtStr=r.get(7);
+            chatMessage.setReadAt(readAtStr==null||readAtStr.isEmpty()? null : LocalDateTime.parse(readAtStr));
+            chatMessage.setStatus(status);
+            //这里处理LocalDateTime类
+            String createTimeStr=r.get(9);
+            chatMessage.setCreateTime(createTimeStr==null||createTimeStr.isEmpty()? null : LocalDateTime.parse(createTimeStr));
+            //这里处理LocalDateTime类
+            String updateTimeStr=r.get(10);
+            chatMessage.setUpdateTime(updateTimeStr==null||updateTimeStr.isEmpty()? null : LocalDateTime.parse(updateTimeStr));
+            //
+            return Result.success(chatMessage);
+        }else {
+            return Result.error(message);
+        }
+    }
+
+    @Override
+    public Result<ChatMessage> findMessageById(Integer messageId) {
+        //通过socket获得字符串格式的数据
+        String request="<findMessageById>"+"<"+messageId+">";
+        String response;//用于接收数据
+        try {
+            response= requestSender.sendRequest(request);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        //将String转换为列表形式
+        List<String> r=responseHandler.handleParams(response);
+        //将列表中的数据取出，并将String类型转为正确的数据类型
+        int code=Integer.valueOf(r.get(0)) ;//响应码，根据其不同对应之后的不同操作
+        String message=r.get(1);//响应信息
+        if(code==0){
+            ChatMessage chatMessage=new ChatMessage();
+            //注意有些字段可以直接从函数参数中获取
+            //
+            chatMessage.setChatMessageId(messageId);
+            chatMessage.setSenderId(Integer.valueOf(r.get(3)));
+            chatMessage.setReceiverId(Integer.valueOf(r.get(4)));
+            chatMessage.setType(Integer.valueOf(r.get(5)));
+            chatMessage.setContent(r.get(6));
+            //这里处理LocalDateTime类
+            String readAtStr=r.get(7);
+            chatMessage.setReadAt(readAtStr==null||readAtStr.isEmpty()? null : LocalDateTime.parse(readAtStr));
+            //
+            chatMessage.setStatus(Integer.valueOf(r.get(8)));
+            //这里处理LocalDateTime类
+            String createTimeStr=r.get(9);
+            chatMessage.setCreateTime(createTimeStr==null||createTimeStr.isEmpty()? null : LocalDateTime.parse(createTimeStr));
+            //这里处理LocalDateTime类
+            String updateTimeStr=r.get(10);
+            chatMessage.setUpdateTime(updateTimeStr==null||updateTimeStr.isEmpty()? null : LocalDateTime.parse(updateTimeStr));
+            //
+            return Result.success(chatMessage);
+        }else {
+            return Result.error(message);
+        }
+    }
     //
 }

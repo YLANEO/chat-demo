@@ -84,6 +84,8 @@ public class PushListener implements Runnable {
         } else if(msg.startsWith("<push><friendListUpdate>")){
             contactViewEvent.handleRefreshContactViewFriendList(msg);
             messageViewEvent.handleRefreshMessageViewFriendList(msg);
+        } else if(msg.startsWith("<push><messageAdd>")){
+            messageViewEvent.handleRefreshMessageViewMessageList(msg);
         } else {
             return;
         }

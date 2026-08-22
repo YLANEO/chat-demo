@@ -117,6 +117,12 @@ public class ServerThread extends Thread {
         } else if (request.startsWith("<getAllMessage>")) {
             MessageService messageService=new MessageServiceImpl();
             response=messageService.getAllMessage(request);
+        } else if (request.startsWith("<sendMessage>")) {
+            MessageService messageService=new MessageServiceImpl();
+            response=messageService.sendMessage(request);
+        } else if (request.startsWith("<findMessageById>")) {
+            MessageService messageService=new MessageServiceImpl();
+            response=messageService.findMessageById(request);
         } else if (request.startsWith("<registerPushSocket>")) {//
             //对于 <registerPushSocket> 请求，特殊处理：保持连接不关闭
             List<String> params = requestHandler.handleParams(request);

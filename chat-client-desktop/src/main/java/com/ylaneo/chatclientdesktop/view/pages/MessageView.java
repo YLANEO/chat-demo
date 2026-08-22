@@ -49,6 +49,7 @@ public class MessageView extends JPanel {
     private JPanel center;//聊天信息区域
     private JScrollPane chatScroll;//放置center的可滚动容器
     private JPanel buttom;//发送消息区域
+    private JTextArea messageArea;
     private JButton sendMessageBtn;
     private JPanel rightPlaceholder;//右侧默认占位
     private JPanel rightChatPanel;//右侧聊天页面容器（根据点击的用户切换）
@@ -202,7 +203,7 @@ public class MessageView extends JPanel {
                 BorderFactory.createLineBorder(new Color(200, 200, 210),1),
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)
         ));
-        JTextArea messageArea=new JTextArea();//消息输入区
+        messageArea=new JTextArea();//消息输入区
         messageArea.setPreferredSize(new Dimension(9999,250));
         messageArea.setMaximumSize(new Dimension(9999, 250));
         messageArea.setFont(new Font("微软雅黑",Font.PLAIN,15));
@@ -615,9 +616,10 @@ public class MessageView extends JPanel {
     private void showChatPanel(User friend,String remark){
         //顶部渲染选中好友的备注或者昵称（用户名）
         if(remark!=null ){
-            friendName.setText(remark);
+            friendName.setText(getDisplayName(currentSelectedFriend,remark));
         }else {
-            friendName.setText(currentSelectedFriend.getNickname()!=null?currentSelectedFriend.getNickname():currentSelectedFriend.getUsername());
+//            friendName.setText(currentSelectedFriend.getNickname()!=null?currentSelectedFriend.getNickname():currentSelectedFriend.getUsername());
+            friendName.setText(getDisplayName(currentSelectedFriend,null));
         }
         //渲染在线状态
         if (friend.getStatus() != null && friend.getStatus() == 1) {
@@ -686,7 +688,8 @@ public class MessageView extends JPanel {
     */
     //加载所有的聊天消息
     private void loadAllMessages(Integer userId,Integer friendId) {
-        List<ChatMessage> messages = messageFacade.getAllMessage(userId,friendId).getData();
+//        List<ChatMessage> messages = messageFacade.getAllMessage(userId,friendId).getData();
+        allMessages = messageFacade.getAllMessage(userId,friendId).getData();
         //
 //        messages.add(msg(1, friendId, userId, "你好，请问是张三吗？", baseTime().minusMinutes(30)));
 //        messages.add(msg(2, userId,  friendId, "是的，我是。",            baseTime().minusMinutes(28)));
@@ -738,7 +741,7 @@ public class MessageView extends JPanel {
 //                baseTime().minusMinutes(1)));
 
 
-        renderMessages(messages);
+        renderMessages(allMessages);
     }
 
     private ChatMessage msg(int id, int sender, int receiver, String content, LocalDateTime t) {
@@ -813,22 +816,39 @@ public class MessageView extends JPanel {
 
     //发送消息按钮功能绑定
     private void handleSendMessage() {
+        //1.检查信息是否为空
+        if(messageArea.getText().trim().isEmpty() || (messageArea.getText().trim()==null) ){
+            JOptionPane.showMessageDialog(null,"请输入要发送的消息");
+        }
         if (currentSelectedFriend == null) {
-            JOptionPane.showMessageDialog(this, "请先选择一位好友");
+            JOptionPane.showMessageDialog(null, "请先选中一个好友");
             return;
         }
-        // 把目标用户 id 暂存到会话对象中
-        UserSession.getInstance().getCurrentUser(); // 当前用户上下文
-        // 跳到消息卡片页（注意：消息卡片名要与 MainView 中 CardLayout 添加的 key 一致）
-        Window window = SwingUtilities.getWindowAncestor(this);
-        if (window instanceof MainView) {
-            ((MainView) window).cardLayout.show(((MainView) window).contentPanel, "message");
-            // TODO: 将 currentSelectedFriend.getUserid() 传给 MessageView，定位会话窗口？？？？
+        //2.调用发送消息的接口
+//        Result<ChatMessage>r1= messageFacade.sendMessage(UserSession.getInstance().getCurrentUser().getUserid(),currentSelectedFriend.getUserid(), 0,messageArea.getText(),0);
+//        if(r1.getCode()==0){
+//            messageArea.removeAll();//发送成功就清空发送框中的消息
+//            addMessage(r1.getData());//刷新新消息到当前页面
+//        }else {
+//            JOptionPane.showMessageDialog(null,"发送失败");
+//        }
+        //把对 messageFacade.sendMessage 的调用包在 try/catch 里，避免因解析异常把整个流程炸掉时显示"发送失败"（误导用户）
+        try {
+            Result<ChatMessage> r1 = messageFacade.sendMessage(UserSession.getInstance().getCurrentUser().getUserid(),currentSelectedFriend.getUserid(), 0,messageArea.getText(),0);
+            if (r1.getCode() == 0 && r1.getData() != null) {
+                messageArea.setText("");
+                addMessageOfMine(r1.getData());
+            } else {
+                JOptionPane.showMessageDialog(null, "发送失败: " + r1.getMessage());
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "发送失败: " + ex.getMessage());
         }
     }
 
     // ======================================== 推送信息ui更新相关的方法 ========================================
-    //在 MessageView 类内部新增
+    //在MessageView类内部新增
     public void addFriend(User friend) {
         if (friend == null || friend.getUserid() == null) {
             return;
@@ -842,5 +862,53 @@ public class MessageView extends JPanel {
         currentFriends.add(friend);
         renderFriendList(currentFriends);
     }
+
+    //新增一条消息到消息页面中(我发送的)
+    public void addMessageOfMine(ChatMessage chatMessage){
+        if (chatMessage == null || chatMessage.getChatMessageId() == null) {
+            return;
+        }
+        //1.将新消息添加到
+        //防止重复添加
+        for (ChatMessage c : allMessages) {
+            if (c.getChatMessageId().equals(chatMessage.getChatMessageId())) {
+                return;
+            }
+        }
+        //判断当前打开的聊天窗口是不是这条消息对应的,关键
+        Integer senderId=chatMessage.getSenderId();
+        Integer receiverId=chatMessage.getReceiverId();
+        Integer myId=UserSession.getInstance().getCurrentUser().getUserid();
+        if(myId==senderId){
+            allMessages.add(chatMessage);
+            //2.重新渲染消息页面
+            renderMessages(allMessages);
+        }
+    }
+    //新增一条消息到消息页面中(发送者是其他人，需要判断发送者和当前打开的会话窗口归属者，是不是同一个好友)
+        public void addMessageOfOthers(ChatMessage chatMessage){
+        if (chatMessage == null || chatMessage.getChatMessageId() == null) {
+            return;
+        }
+        //1.将新消息添加到
+        //防止重复添加
+        for (ChatMessage c : allMessages) {
+            if (c.getChatMessageId().equals(chatMessage.getChatMessageId())) {
+                return;
+            }
+        }
+        //判断当前打开的聊天窗口是不是这条消息对应的,关键
+        Integer senderId=chatMessage.getSenderId();
+        Integer receiverId=chatMessage.getReceiverId();
+        Integer myId=UserSession.getInstance().getCurrentUser().getUserid();
+        //发送者id==当前打开的好友的id
+        if(senderId==currentSelectedFriend.getUserid()){
+            allMessages.add(chatMessage);
+            //2.重新渲染消息页面
+            renderMessages(allMessages);
+        }
+
+    }
+
 
 }

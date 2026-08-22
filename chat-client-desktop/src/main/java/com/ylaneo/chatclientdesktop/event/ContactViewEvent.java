@@ -72,6 +72,8 @@ public class ContactViewEvent {
         try {
             friendId = Integer.valueOf(params.get(2));
         } catch (NumberFormatException e) {
+            //在界面上进行提示
+            JOptionPane.showMessageDialog(null, "解析好友ID失败，请稍后重试"+e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

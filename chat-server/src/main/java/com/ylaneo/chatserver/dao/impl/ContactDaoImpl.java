@@ -131,7 +131,7 @@ public class ContactDaoImpl implements ContactDao {
     @Override
     public Result handleRequest(Integer friendRequestId, Integer senderId, Integer receiverId, Integer status) {
         /* 一个接口包含多个数据库操作的情况 */
-        String updateRequestSql = "update friend_request set status=? where id=? and status=0";
+        String updateRequestSql = "update friend_request set status=?,update_time=now() where id=? and status=0";//忘记更新时间戳了。补上
         String insertRelationSql = "insert into friend_relation (user_id, friend_id, status) values (?, ?, 1)";
         //
         Connection conn = null;
