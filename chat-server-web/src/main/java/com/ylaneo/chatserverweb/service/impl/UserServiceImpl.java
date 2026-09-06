@@ -6,13 +6,15 @@ import com.ylaneo.chatserverweb.dto.RegisterDto;
 import com.ylaneo.chatserverweb.entity.Result;
 import com.ylaneo.chatserverweb.entity.User;
 import com.ylaneo.chatserverweb.service.UserService;
+import com.ylaneo.chatserverweb.util.JwtUtil;
 import com.ylaneo.chatserverweb.websocket.ChatWebSocketHandler;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service  // 交给 Spring 管理
+@Service//交给Spring管理
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
@@ -31,8 +33,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Result login(String username, String password) {
-        return userDao.login(username, password);
+    public Result<String> login(String username, String password) {
+        Result<User> result= userDao.login(username, password);
+        //
+        if (result.getCode() != 0) {
+            return Result.error(result.getMessage());//直接传DAO的错误信息
+        }
+        User loginUser = result.getData();
+        if (loginUser == null) {
+            return Result.error("用户不存在");
+        }
+        //添加jwt令牌
+        Map<String,Object>claims=new HashMap<>();
+        //由两部分构成，用户id和用户的username
+        claims.put("userid",loginUser.getUserid());
+        claims.put("username",loginUser.getUsername());
+        String token= JwtUtil.genToken(claims);//使用token（一个string类型的字符串）接受生成的jwt令牌,令牌中包含了用户的id和用户名
+        return Result.success(token);
     }
 
     @Override
@@ -49,8 +66,8 @@ public class UserServiceImpl implements UserService {
     public Result updateUserStatus(Integer userId, Integer userStatus) {
         Result result = userDao.updateUserStatus(userId, userStatus);
 
-        // ★ 关键变化：这里不再调用 Server.pushStatusUpdate()
-        // 而是调用 ChatWebSocketHandler.pushToUsers() 推送 WebSocket 消息
+        // ★ 关键变化：这里不再调用Server.pushStatusUpdate()
+        // 而是调用ChatWebSocketHandler.pushToUsers()推送WebSocket消息
         if (result.getCode() == 0) {
             broadcastStatusUpdate(userId, userStatus);
         }

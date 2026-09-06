@@ -21,6 +21,12 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')//别忘了，不然会直接发送http://localhost:8080/api/*给后端，多出来的api/
+      },
+      // 代理后端文件上传
+      '/uploads': {        // ← 新增：把 /uploads 转发到后端
+        target: 'http://localhost:8080',
+        changeOrigin: true,
       },
       // 代理 WebSocket
       '/ws': {

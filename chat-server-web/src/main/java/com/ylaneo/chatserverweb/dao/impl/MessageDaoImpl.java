@@ -123,4 +123,100 @@ public class MessageDaoImpl implements MessageDao {
             return Result.error(e.getMessage());
         }
     }
+
+    /**
+     * 向上分页查询历史消息。
+     * lastMessageId = null 时表示最新一页；否则查询 id < lastMessageId 的消息。
+     * 返回的消息按时间倒序，再用 list 倒置回来，方便展示。
+     */
+    @Override
+    public Result<List<ChatMessage>> getHistoryMessage(Integer userId, Integer friendId, Long lastMessageId, Integer limit) {
+        String sql = "SELECT * FROM chat_message WHERE ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) " ;
+        if (lastMessageId != null) {
+            sql=sql+"AND id < ? ";
+        }
+        sql=sql+"order by id desc limit ?";
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement pt = conn.prepareStatement(sql.toString())) {
+            int idx = 1;
+            pt.setInt(idx++, userId);
+            pt.setInt(idx++, friendId);
+            pt.setInt(idx++, friendId);
+            pt.setInt(idx++, userId);
+            if (lastMessageId != null) {
+                pt.setLong(idx++, lastMessageId);
+            }
+            pt.setInt(idx, limit != null && limit > 0 ? limit : 20);
+            ResultSet rs = pt.executeQuery();
+            List<ChatMessage> list = new ArrayList<>();
+            while (rs.next()) list.add(mapRow(rs));
+            // 倒序转正序，便于前端展示
+            java.util.Collections.reverse(list);
+            return Result.success(list);
+        } catch (SQLException e) {
+            return Result.error("数据库操作错误:" + e.getMessage());
+        }
+    }
+    /**
+     * 把"对方发给我的、还没读的"消息批量置为已读。
+     * 只标对方发给我的（sender_id=friendId, receiver_id=userId），不标自己发的。
+     */
+    @Override
+    public Result<Integer> markAsRead(Integer userId, Integer friendId) {
+        String sql = "update chat_message set read_at=now() where sender_id=? and receiver_id=? and read_at is null ";
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement pt = conn.prepareStatement(sql)) {
+            pt.setInt(1, friendId);
+            pt.setInt(2, userId);
+            int rows = pt.executeUpdate();
+            return Result.success(rows);
+        } catch (SQLException e) {
+            return Result.error("数据库操作错误:" + e.getMessage());
+        }
+    }
+    @Override
+    public Result<Integer> countUnread(Integer userId, Integer friendId) {
+        String sql = "SELECT COUNT(*) AS cnt FROM chat_message " +
+                "WHERE sender_id=? AND receiver_id=? AND read_at IS NULL";
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement pt = conn.prepareStatement(sql)) {
+            pt.setInt(1, friendId);
+            pt.setInt(2, userId);
+            ResultSet rs = pt.executeQuery();
+            int cnt = 0;
+            if (rs.next()) cnt = rs.getInt("cnt");
+            return Result.success(cnt);
+        } catch (SQLException e) {
+            return Result.error("数据库操作错误:" + e.getMessage());
+        }
+    }
+    @Override
+    public Result<Integer> countTotalUnread(Integer userId) {
+        String sql = "SELECT COUNT(*) AS cnt FROM chat_message " +
+                "WHERE receiver_id=? AND read_at IS NULL";
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement pt = conn.prepareStatement(sql)) {
+            pt.setInt(1, userId);
+            ResultSet rs = pt.executeQuery();
+            int cnt = 0;
+            if (rs.next()) cnt = rs.getInt("cnt");
+            return Result.success(cnt);
+        } catch (SQLException e) {
+            return Result.error("数据库操作错误:" + e.getMessage());
+        }
+    }
+    // 抽出公共的字段映射
+    private ChatMessage mapRow(ResultSet rs) throws SQLException {
+        ChatMessage m = new ChatMessage();
+        m.setChatMessageId(rs.getInt("id"));
+        m.setSenderId(rs.getInt("sender_id"));
+        m.setReceiverId(rs.getInt("receiver_id"));
+        m.setType(rs.getInt("type"));
+        m.setContent(rs.getString("content"));
+        m.setReadAt(rs.getObject("read_at", LocalDateTime.class));
+        m.setStatus(rs.getInt("status"));
+        m.setCreateTime(rs.getObject("create_time", LocalDateTime.class));
+        m.setUpdateTime(rs.getObject("update_time", LocalDateTime.class));
+        return m;
+    }
 }

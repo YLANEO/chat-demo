@@ -4,6 +4,8 @@ import com.ylaneo.chatserverweb.dao.UserDao;
 import com.ylaneo.chatserverweb.dto.RegisterDto;
 import com.ylaneo.chatserverweb.entity.Result;
 import com.ylaneo.chatserverweb.entity.User;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -62,7 +64,7 @@ public class UserDaoImpl implements UserDao {
                 return Result.success("注册成功");
             }
             return Result.error("注册失败");
-        } catch (org.springframework.dao.DuplicateKeyException e) {
+        } catch (DuplicateKeyException e) {
             return Result.error("用户名已存在");
         } catch (Exception e) {
             return Result.error("数据库错误: " + e.getMessage());
@@ -70,10 +72,10 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public Result login(String username, String password) {
-        String sql = "SELECT * FROM user WHERE username = ?";
+    public Result<User> login(String username, String password) {
+        String sql = "SELECT * FROM user WHERE (username = ?) or (nickname is not null and nickname = ?)";
         try {
-            User user = jdbcTemplate.queryForObject(sql, userRowMapper, username);
+            User user = jdbcTemplate.queryForObject(sql, userRowMapper, username,username);
             if (user == null) {
                 return Result.error("用户不存在");
             }
@@ -82,7 +84,7 @@ public class UserDaoImpl implements UserDao {
             }
             System.out.println("登录成功: userId=" + user.getUserid());
             return Result.success(user);
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return Result.error("用户不存在");
         } catch (Exception e) {
             return Result.error("数据库错误: " + e.getMessage());
@@ -107,7 +109,7 @@ public class UserDaoImpl implements UserDao {
             User user = new User();
             user.setUsername(username);
             return Result.success(user);
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return Result.error("用户不存在");
         } catch (Exception e) {
             return Result.error("数据库错误: " + e.getMessage());
@@ -150,7 +152,7 @@ public class UserDaoImpl implements UserDao {
         try {
             User user = jdbcTemplate.queryForObject(sql, userRowMapper, userId);
             return Result.success(user);
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return Result.error("用户不存在");
         } catch (Exception e) {
             return Result.error("数据库错误: " + e.getMessage());

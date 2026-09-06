@@ -12,4 +12,12 @@ public interface MessageDao {
     Result<ChatMessage> sendMessage(Integer senderId,Integer receiverId,Integer type,String content,Integer status);
     //根据id查找一条消息
     Result<ChatMessage> findMessageById(Integer messageId);
+    //分页查询历史消息（用于"加载更多"）
+    Result<List<ChatMessage>> getHistoryMessage(Integer userId, Integer friendId, Long lastMessageId, Integer limit);
+    //批量标记消息为已读
+    Result<Integer> markAsRead(Integer userId, Integer friendId);
+    //统计两人之间未读消息总数
+    Result<Integer> countUnread(Integer userId, Integer friendId);
+    //根据当前用户统计所有未读消息（好友列表上红点总数）
+    Result<Integer> countTotalUnread(Integer userId);
 }

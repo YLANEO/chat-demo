@@ -1,9 +1,12 @@
 @import './base.css';
 
-#app {
-  max-width: 1280px;
+/* 让各个页面自己控制样式 */
+
+/* #app {
+  width: 100%;
+  min-height: 100vh;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
   font-weight: normal;
 }
 
@@ -32,4 +35,53 @@ a,
     grid-template-columns: 1fr 1fr;
     padding: 0 2rem;
   }
+} */ */
+
+
+
+/* ============================
+  全局基础重置
+   ============================ */
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================
+  角色主题CSS变量（默认值：管理员紫色）
+  放在:root上，所有子元素都能继承到var(--xxx)
+   ============================ */
+:root {
+  /* 主题色 */
+  --theme-primary: #764dc4;
+  --theme-accent: #c9a0ff;
+  --theme-glow: rgba(118, 77, 196, 0.25);
+
+  /* 文本 */
+  --theme-text: rgba(255, 255, 255, 0.9);
+  --theme-text-muted: rgba(255, 255, 255, 0.55);
+
+  /* 边框/容器 */
+  --theme-border: rgba(255, 255, 255, 0.15);
+  --theme-card-bg: rgba(255, 255, 255, 0.12);
+  --theme-icon-bg: rgba(255, 255, 255, 0.1);
+
+  /* 区段背景（毛玻璃半透明色） */
+  --theme-header-bg: rgba(44, 26, 74, 0.85);
+  --theme-sidebar-bg: rgba(30, 17, 52, 0.75);
+  --theme-dropdown-bg: rgba(30, 17, 52, 0.92);
+  --theme-footer-bg: rgba(20, 10, 40, 0.6);
+
+  /* 交互 */
+  --theme-menu-hover: rgba(255, 255, 255, 0.08);
+  --theme-menu-active: rgba(255, 255, 255, 0.15);
+  --theme-btn-bg: rgba(118, 77, 196, 0.4);
+  --theme-btn-hover: rgba(118, 77, 196, 0.65);
+
+  /* 全屏背景 */
+  --theme-body-bg: linear-gradient(135deg, #1a0f30 0%, #2d1b69 50%, #1a1040 100%);
 }
