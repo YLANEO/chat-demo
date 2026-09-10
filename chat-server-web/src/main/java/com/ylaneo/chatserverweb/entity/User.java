@@ -15,4 +15,6 @@ public class User {
     private String nickname;
     private String avatar_url;
     private Integer status;
+    // 登录成功时携带的 jwt token，web 端和 desktop 端都可能用到
+    private String token;
 }

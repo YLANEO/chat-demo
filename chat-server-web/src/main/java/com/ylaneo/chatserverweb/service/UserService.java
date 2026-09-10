@@ -11,7 +11,7 @@ public interface UserService {
 //    Result register(String username, String password, String rePassword , Integer role);
     Result register(RegisterDto registerDto);
     //登录接口:注意需要区分登录的角色（使用user中的role属性区分）
-    Result<String> login(String username,String password);
+    Result<User> login(String username,String password);
     //修改用户名
     Result updateUsername(Integer userId,String reUsername);
     //获得当前用户的username
@@ -24,4 +24,8 @@ public interface UserService {
     Result updateNickname(Integer userId, String newNickname);
     //获取用户信息
     Result<User> getUserData(Integer userId);
+    //用户上线时调用
+    void markUserOnlineAndNotify(Integer userId);
+    //用户离线时调用（HeartbeatHandler等场景触发）
+    void markUserOfflineAndNotify(Integer userId);
 }

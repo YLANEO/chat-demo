@@ -13,7 +13,7 @@ target/
 *.ipr
 out/
 
-# vue通用
+# ============================ vue通用 ============================
 
 # Logs
 logs
@@ -52,5 +52,22 @@ coverage
 # Vitest
 __screenshots__/
 
-# Vite
+#  ============================ Vite ============================
 *.timestamp-*-*.mjs
+
+# ============================ Android ============================
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+# ============================ Gradle ============================
+.gradle/
+build/
+local.properties
+*.iml
+# IDE
+.idea/
+captures/
+# Kotlin/Java 编译
+*.log

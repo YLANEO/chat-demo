@@ -4,6 +4,8 @@ import com.ylaneo.chatserverweb.dao.MessageDao;
 import com.ylaneo.chatserverweb.dto.WebSocketMessage;
 import com.ylaneo.chatserverweb.entity.ChatMessage;
 import com.ylaneo.chatserverweb.entity.Result;
+import com.ylaneo.chatserverweb.gateway.LegacyPushNotifier;
+import com.ylaneo.chatserverweb.gateway.LegacyResponseBuilder;
 import com.ylaneo.chatserverweb.service.MessageService;
 import com.ylaneo.chatserverweb.websocket.ChatWebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,12 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private ChatWebSocketHandler webSocketHandler;
 
+    @Autowired
+    private LegacyPushNotifier pushNotifier;
+
+    @Autowired
+    private LegacyResponseBuilder responseBuilder;
+
     @Override
     public Result<List<ChatMessage>> getAllMessage(Integer userId, Integer friendId) {
         return messageDao.getAllMessage(userId, friendId);
@@ -26,19 +34,30 @@ public class MessageServiceImpl implements MessageService {
     /**
      * 发送消息：
      *   1. 落库
-     *   2. 推 WebSocket 通知对方（如果对方在线）
+     *   2. 推 WebSocket + swing 通知接收方（receiver）
+     *   3. 推 WebSocket + swing 通知发送方（sender）：多端同步，sender 的其他设备也能收到这条消息
      */
     @Override
     public Result<ChatMessage> sendMessage(Integer senderId, Integer receiverId, Integer type, String content, Integer status) {
         Result<ChatMessage> result = messageDao.sendMessage(senderId, receiverId, type, content, status);
         if (result.getCode() == 0 && result.getData() != null) {
-            // 推送：告诉"接收方"你收到了一条新消息
+            Integer messageId = result.getData().getChatMessageId();
+
+            // 构建推送消息（web + swing 共用）
             WebSocketMessage ws = new WebSocketMessage();
             ws.setType("chat");
             ws.setSenderId(senderId);
             ws.setReceiverId(receiverId);
             ws.setContent(result.getData());
+            String legacyPush = responseBuilder.buildPushMessageAdd(senderId, messageId);
+
+            // 推给接收方（receiver）：通知对方有新消息
             webSocketHandler.pushToUser(receiverId, ws);
+            pushNotifier.pushTo(receiverId, legacyPush);
+
+            // 推给发送方（sender）：让 sender 的其他设备也能同步看到这条消息
+            webSocketHandler.pushToUser(senderId, ws);
+            pushNotifier.pushTo(senderId, legacyPush);
         }
         return result;
     }

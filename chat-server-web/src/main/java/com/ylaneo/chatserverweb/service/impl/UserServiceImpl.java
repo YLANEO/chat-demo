@@ -5,26 +5,31 @@ import com.ylaneo.chatserverweb.dao.UserDao;
 import com.ylaneo.chatserverweb.dto.RegisterDto;
 import com.ylaneo.chatserverweb.entity.Result;
 import com.ylaneo.chatserverweb.entity.User;
+import com.ylaneo.chatserverweb.gateway.LegacyPushNotifier;
+import com.ylaneo.chatserverweb.gateway.LegacyResponseBuilder;
 import com.ylaneo.chatserverweb.service.UserService;
 import com.ylaneo.chatserverweb.util.JwtUtil;
 import com.ylaneo.chatserverweb.websocket.ChatWebSocketHandler;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service//交给Spring管理
-public class UserServiceImpl implements UserService {
+@Service
+public class UserServiceImpl implements UserService, ApplicationContextAware {
+    private ApplicationContext applicationContext;
 
     private final UserDao userDao;
     private final ContactDao contactDao;
-    private final ChatWebSocketHandler webSocketHandler;
+//    private final LegacyPushNotifier pushNotifier;
+//    private final LegacyResponseBuilder responseBuilder;
 
-    public UserServiceImpl(UserDao userDao, ContactDao contactDao, ChatWebSocketHandler webSocketHandler) {
+    public UserServiceImpl(UserDao userDao, ContactDao contactDao) {
         this.userDao = userDao;
         this.contactDao = contactDao;
-        this.webSocketHandler = webSocketHandler;
     }
 
     @Override
@@ -33,7 +38,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Result<String> login(String username, String password) {
+    public Result<User> login(String username, String password) {
         Result<User> result= userDao.login(username, password);
         //
         if (result.getCode() != 0) {
@@ -43,13 +48,16 @@ public class UserServiceImpl implements UserService {
         if (loginUser == null) {
             return Result.error("用户不存在");
         }
-        //添加jwt令牌
-        Map<String,Object>claims=new HashMap<>();
-        //由两部分构成，用户id和用户的username
-        claims.put("userid",loginUser.getUserid());
-        claims.put("username",loginUser.getUsername());
-        String token= JwtUtil.genToken(claims);//使用token（一个string类型的字符串）接受生成的jwt令牌,令牌中包含了用户的id和用户名
-        return Result.success(token);
+        // 仍然生成 jwt token（web 端 / app 端可能要用到）
+        Map<String,Object> claims = new HashMap<>();
+        claims.put("userid", loginUser.getUserid());
+        claims.put("username", loginUser.getUsername());
+        String token = JwtUtil.genToken(claims);
+        // 把 token 挂在 User 上一起返回，方便后续 web 端需要时直接拿
+        loginUser.setToken(token);
+        System.out.println("[UserServiceImpl] 登录成功: userId=" + loginUser.getUserid());
+        // 返回完整的 User 对象，让 LegacyResponseBuilder.buildLogin() 能走 4 字段分支
+        return Result.success(loginUser);
     }
 
     @Override
@@ -66,8 +74,7 @@ public class UserServiceImpl implements UserService {
     public Result updateUserStatus(Integer userId, Integer userStatus) {
         Result result = userDao.updateUserStatus(userId, userStatus);
 
-        // ★ 关键变化：这里不再调用Server.pushStatusUpdate()
-        // 而是调用ChatWebSocketHandler.pushToUsers()推送WebSocket消息
+        //关键：这里不再调用Server.pushStatusUpdate()，而是调用ChatWebSocketHandler.pushToUsers()推送WebSocket消息
         if (result.getCode() == 0) {
             broadcastStatusUpdate(userId, userStatus);
         }
@@ -91,37 +98,53 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * ★ 广播状态更新给所有好友
-     * 原来: Server.pushStatusUpdate(friendId, "<push><statusUpdate>...")
-     * 现在: webSocketHandler.pushToUsers(friendIds, pushMessage)
+     * 广播状态更新给所有好友
+     * 原来:Server.pushStatusUpdate(friendId,"<push><statusUpdate>...")
+     * 现在:webSocketHandler.pushToUsers(friendIds,pushMessage)
      */
     private void broadcastStatusUpdate(Integer userId, Integer status) {
-        // 获取该用户的所有好友 ID
+        //漏掉了这行！这是变量定义
         Result<List<Integer>> friendIdsResult = contactDao.getFriendIds(userId);
         if (friendIdsResult.getCode() != 0 || friendIdsResult.getData() == null) {
             return;
         }
-
-        // 构造推送消息
-        Map<String, Object> pushMessage = Map.of(
-                "type", "statusUpdate",
-                "userId", userId,
-                "status", status
-        );
-
-        // 推送给所有好友
-        webSocketHandler.pushToUsers(friendIdsResult.getData(), pushMessage);
+        // web 端推送（JSON）
+        Map<String, Object> webMessage = LegacyPushNotifier.buildWebStatusUpdate(userId, status);
+        ChatWebSocketHandler webSocketHandler = applicationContext.getBean(ChatWebSocketHandler.class);
+        webSocketHandler.pushToUsers(friendIdsResult.getData(), webMessage);
+        // swing 端推送（尖括号字符串）—— 随用随取
+        LegacyResponseBuilder responseBuilder = applicationContext.getBean(LegacyResponseBuilder.class);
+        LegacyPushNotifier pushNotifier = applicationContext.getBean(LegacyPushNotifier.class);
+        String legacyMessage = responseBuilder.buildPushStatusUpdate(userId, status);
+        pushNotifier.pushToUsers(friendIdsResult.getData(), legacyMessage);
         System.out.println("状态更新已广播: userId=" + userId + ", status=" + status);
     }
 
     /**
-     * 用户离线时调用（Controller 或 WebSocketHandler 断开连接时调用）
-     * 原来: Server.userDisconnected(userId) → markUserOfflineAndNotify()
+     * 用户上线时调用（LegacyClientHandler和ChatWebSocketHandler连接建立时调用）
+     * 对称于markUserOfflineAndNotify
+     */
+    public void markUserOnlineAndNotify(Integer userId) {
+        Result result = userDao.updateUserStatus(userId, 1);
+        if (result.getCode() == 0) {
+            //这里会先查询好友列表，再广播推送状态更新给所有好友
+            broadcastStatusUpdate(userId, 1);
+        }
+    }
+
+    /**
+     * 用户离线时调用（Controller或WebSocketHandler断开连接时调用）
+     * 原来:Server.userDisconnected(userId)→markUserOfflineAndNotify()
      */
     public void markUserOfflineAndNotify(Integer userId) {
         Result result = userDao.updateUserStatus(userId, 0);
         if (result.getCode() == 0) {
             broadcastStatusUpdate(userId, 0);
         }
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 }

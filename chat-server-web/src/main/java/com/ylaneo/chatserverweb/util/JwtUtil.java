@@ -16,6 +16,7 @@ public class JwtUtil {
         return JWT.create()
                 .withClaim("claims", claims) // 1. 往票据里塞数据（比如用户ID、姓名）
                 .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 12))//有效时间12小时
+//                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 10))//有效时间10秒，用于验证
                 .sign(Algorithm.HMAC256(KEY));// 3. 用“秘钥”盖章，生成防伪签名
     }
 

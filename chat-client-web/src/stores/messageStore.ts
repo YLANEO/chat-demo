@@ -5,6 +5,7 @@ import { sendMessageService, markReadService } from '@/api/message'
 import { useUserStore } from '@/stores/userStore'
 
 export const useMessageStore = defineStore('message', () => {
+  const lastMsgMap = ref<Record<number, ChatMessage>>({})
   // 按好友 id 分组缓存消息
   const messageMap = ref<Record<number, ChatMessage[]>>({})
 
@@ -20,12 +21,28 @@ export const useMessageStore = defineStore('message', () => {
     return messageMap.value[id]
   }
 
-  // 写入或替换一条消息
+  /**
+   * 写入或替换一条消息。
+   * 去重策略：只按 chatMessageId 命中。真实消息 id 唯一，足够。
+   */
   function upsert(m: ChatMessage) {
-    const list = ensure(m.receiverId === currentUid() ? m.senderId : m.receiverId)
-    const idx = list.findIndex(x => x.chatMessageId === m.chatMessageId)
+    const friendId = m.receiverId === currentUid() ? m.senderId : m.receiverId
+    const list = ensure(friendId)
+
+    let idx = list.findIndex(x => x.chatMessageId === m.chatMessageId)
     if (idx >= 0) list[idx] = m
     else list.push(m)
+
+    // 同步更新每个好友的最新一条消息（用于好友列表预览）
+    lastMsgMap.value[friendId] = m
+  }
+
+  // 按 chatMessageId 移除一条消息（兼容老调用）
+  function remove(friendId: number, chatMessageId: number) {
+    const list = messageMap.value[friendId]
+    if (!list) return
+    const idx = list.findIndex(m => m.chatMessageId === chatMessageId)
+    if (idx >= 0) list.splice(idx, 1)
   }
 
   function setMessages(friendId: number, list: ChatMessage[]) {
@@ -45,10 +62,11 @@ export const useMessageStore = defineStore('message', () => {
     if (friendId != null) unreadMap.value[friendId] = 0
   }
 
-  // —— 下面封装 service 调用，统一走 store ——
+  // —— 发送消息：等 HTTP 回来拿到真实消息后入列表，简单可靠
   async function sendMessage(friendId: number, content: string) {
-    const res = await sendMessageService(friendId, 0, content)
-    upsert(res)
+    const saved = await sendMessageService(friendId, 0, content)
+    upsert(saved)
+    return saved
   }
 
   async function markRead(friendId: number) {
@@ -65,8 +83,8 @@ export const useMessageStore = defineStore('message', () => {
   }
 
   return {
-    messageMap, activeFriendId, unreadMap,
-    ensure, upsert, setMessages, prependMessages, setUnread, active,
+    messageMap, activeFriendId, unreadMap, lastMsgMap,
+    ensure, upsert, remove, setMessages, prependMessages, setUnread, active,
     sendMessage, markRead,
   }
 })

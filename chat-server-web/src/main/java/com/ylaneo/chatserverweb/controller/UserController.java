@@ -4,7 +4,6 @@ import com.ylaneo.chatserverweb.dto.RegisterDto;
 import com.ylaneo.chatserverweb.entity.Result;
 import com.ylaneo.chatserverweb.entity.User;
 import com.ylaneo.chatserverweb.service.UserService;
-import com.ylaneo.chatserverweb.service.impl.UserServiceImpl;
 import com.ylaneo.chatserverweb.util.ThreadLocalUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,12 @@ public class UserController {
     //登录
     @PostMapping("/login")
     public Result<String> login(@RequestParam String username, @RequestParam String password) {
-        return userService.login(username, password);
+        // web 端只需要 token，所以从 User 中把 token 取出来再返回
+        Result<User> result = userService.login(username, password);
+        if (result.getCode() == 0 && result.getData() != null) {
+            return Result.success(result.getData().getToken());
+        }
+        return Result.<String>error(result.getMessage());
     }
     //注册
     @PostMapping("/register")

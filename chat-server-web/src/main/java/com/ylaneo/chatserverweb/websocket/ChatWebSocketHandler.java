@@ -1,6 +1,9 @@
 package com.ylaneo.chatserverweb.websocket;
 
 import com.ylaneo.chatserverweb.dto.WebSocketMessage;
+import com.ylaneo.chatserverweb.service.UserService;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,7 +16,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class ChatWebSocketHandler extends TextWebSocketHandler {
+public class ChatWebSocketHandler extends TextWebSocketHandler implements ApplicationContextAware {
+
+    private ApplicationContext applicationContext;
+
+    // 懒取 UserService，打破与 UserServiceImpl 的构造期循环依赖
+    private UserService getUserService() {
+        return applicationContext.getBean(UserService.class);
+    }
 
     /**
      * onlineUsers 的作用和 chat-server 项目中的 Server.onlineUsers 完全一样
@@ -34,10 +44,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
      */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // 从 session 中取出 userId（登录时存入的，详见登录接口）
+        // 从session中取出userId（登录时存入的，详见登录接口）
         Integer userId = getUserIdFromSession(session);
         if (userId != null) {
             onlineUsers.put(userId, session);
+            // 通知好友：该用户上线
+            getUserService().markUserOnlineAndNotify(userId);
             System.out.println("用户连接建立: userId=" + userId);
         }
     }
@@ -72,10 +84,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         Integer userId = getUserIdFromSession(session);
         if (userId != null) {
             onlineUsers.remove(userId);
+            // 通知好友：该用户下线
+            getUserService().markUserOfflineAndNotify(userId);
             System.out.println("用户断开连接: userId=" + userId);
-
-            // 如果需要，通知好友该用户下线（调用 UserService）
-            // userService.markUserOffline(userId);
         }
     }
 
@@ -182,5 +193,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     // Getter，供外部查询在线状态
     public Map<Integer, WebSocketSession> getOnlineUsers() {
         return onlineUsers;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 }

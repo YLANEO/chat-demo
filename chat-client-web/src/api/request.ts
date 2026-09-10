@@ -1,7 +1,13 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Result } from '@/types/api'
 import { useUserStore } from '@/stores/userStore'//useUserStore是自定义的名称？不是userStore中有的
+import { useRouter, useRoute } from 'vue-router'
+
+// 创建一个路由器实例
+const router = useRouter();
+
+
 
 // 创建一个axios实例，把 axios 封装成实例，而不是直接用全局 axios。并设置基础URL和超时时间
 const axiosInstance = axios.create({
@@ -34,6 +40,9 @@ axiosInstance.interceptors.request.use(
   // }
 )
 
+// 幂等标记：token 过期时弹窗只弹一次，防止多个并发请求同时 401 弹出多个弹窗
+let isRedirecting = false
+
 // 响应拦截器：剥出 data
 axiosInstance.interceptors.response.use(
   //这个AxiosResponse是从axios中引入的类型
@@ -46,6 +55,49 @@ axiosInstance.interceptors.response.use(
     return res.data// 业务层直接拿到 T
   },
   (error) => {
+    const status = error.response?.status
+    const data = error.response?.data as { code?: number; message?: string } | undefined
+
+    // 后端信号：HTTP 401或业务code=1都表示token无效/已过期
+    // （参考LoginInterceptor异常分支：response.setStatus(401)+body{code:1,message:"token无效或已过期"}）
+    if (status === 401 || data?.code === 1) {
+
+      const userStore = useUserStore()
+      // 第一种方式：直接硬刷
+      //   userStore.clearUser()//清store+sessionStorage；App.vue的watch会自动stopWs()
+      //   ElMessage.error(data?.message || '登录已过期，请重新登录')
+      //   // 用硬刷而不是router.push：避免axios拦截器里使用路由实例的潜在时序问题，
+      //   // 同时保证受保护页面彻底卸载（不留幽灵 WS / 缓存状态）
+      //   setTimeout(() => {
+      //     window.location.href = '/login'
+      //   }, 1500)   // 等 1.5 秒，提示框有足够时间显示
+      //   // window.location.href = '/login'
+      //   //
+      //   // router.push('/login')
+
+      // 第二种方式：弹窗确认
+      userStore.clearUser()
+
+      if (!isRedirecting) {
+        isRedirecting = true
+        ElMessageBox.confirm('您的登录已过期，请重新登录', '登录已过期', {
+          confirmButtonText: '确定',
+          showCancelButton: false,
+          closeOnClickModal: false,
+          closeOnPressEscape: false,
+          type: 'warning',
+        }).then(() => {
+          window.location.href = '/login'
+        }).catch(() => {
+          isRedirecting = false
+        })
+      }
+
+
+      return Promise.reject(error)
+    }
+
+    // 其他错误（网络断、500、502...）走兜底
     ElMessage.error('前端响应拦截器报错：系统繁忙，请稍后再试')
     return Promise.reject(error)
   }

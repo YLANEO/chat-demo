@@ -901,8 +901,17 @@ public class MessageView extends JPanel {
         Integer senderId=chatMessage.getSenderId();
         Integer receiverId=chatMessage.getReceiverId();
         Integer myId=UserSession.getInstance().getCurrentUser().getUserid();
-        //发送者id==当前打开的好友的id
-        if(senderId==currentSelectedFriend.getUserid()){
+
+        // ===== 修复：判定"消息的对方"是不是当前打开的好友 =====
+        // 消息对方 = 我发送时是 receiver，接收时是 sender
+        // 只有当前打开了这个好友，才把消息渲染到当前会话窗口
+        if (currentSelectedFriend == null) {
+            // 当前没有打开任何会话：消息暂时不渲染，
+            // 好友列表的未读小红点会由后端 <push><friendListUpdate> 触发更新
+            return;
+        }
+        Integer otherId = senderId.equals(myId) ? receiverId : senderId;
+        if (otherId.equals(currentSelectedFriend.getUserid())) {
             allMessages.add(chatMessage);
             //2.重新渲染消息页面
             renderMessages(allMessages);

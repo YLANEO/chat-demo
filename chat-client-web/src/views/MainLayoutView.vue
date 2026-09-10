@@ -60,7 +60,7 @@ const handleCommand = (command) => {
             <img src="@/assets/hi.png" alt="logo" class="logo-img" />
         </div> -->
     <!-- 导航菜单 -->
-    <el-menu active-text-color="var(--theme-accent)" text-color="var(--theme-text)" :default-active="route.path" class="glass-menu" router>
+    <el-menu active-text-color="var(--theme-accent)" text-color="var(--theme-text)" :default-active="route.path" class="glass-menu"  router>
       <!-- 聊天页面 -->
       <el-menu-item index="/main/chat">
         <el-icon>
@@ -81,6 +81,7 @@ const handleCommand = (command) => {
           <Setting />
         </el-icon>
         <span>个人信息 </span>
+        <!-- <divided/> -->
       </el-menu-item>
       <!--  -->
       <!-- <el-menu-item index="/main/home">
@@ -89,6 +90,13 @@ const handleCommand = (command) => {
         </el-icon>
         <span>首页</span>
       </el-menu-item> -->
+      <!-- 退出登录：独立的按钮，不要混在 el-menu-item 里 -->
+      <el-menu-item class="logout-item" @click="handleCommand('logout')">
+        <el-icon>
+          <SwitchButton />
+        </el-icon>
+        <span>退出登录</span>
+      </el-menu-item>
     </el-menu>
   </aside>
   <!-- 右侧内容区 -->
@@ -113,7 +121,7 @@ const handleCommand = (command) => {
         </div>
         <template #dropdown>
           <el-dropdown-menu class="glass-dropdown">
-            <el-dropdown-item command="info" :icon="User">基本资料</el-dropdown-item>
+            <el-dropdown-item command="info" :icon="User">个人信息</el-dropdown-item>
             <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>
             <el-dropdown-item command="resetPassword" :icon="EditPen">重置密码</el-dropdown-item>
             <el-dropdown-item command="logout" :icon="SwitchButton" divided>退出登录</el-dropdown-item>
@@ -290,7 +298,7 @@ const handleCommand = (command) => {
   overflow-y: auto;
   border-right: none;
   background: transparent;
-  padding: 12px 0;
+  padding: 10px 0;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -304,6 +312,11 @@ const handleCommand = (command) => {
     background: var(--theme-border);
     border-radius: 2px;
   }
+}
+
+// 退出登录按钮
+.logout-item {
+  padding-top: auto;
 }
 
 /* 穿透 el-menu 内部 —— Element Plus 菜单项 */

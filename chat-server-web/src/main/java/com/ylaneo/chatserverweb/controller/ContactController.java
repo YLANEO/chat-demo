@@ -48,25 +48,21 @@ public class ContactController {
 
     @PostMapping("/request/handle")
     public Result handleRequest(@RequestBody Map<String, Object> body) {
-        Integer requestId = (Integer) body.get("requestId");
-        Integer senderId  = (Integer) body.get("senderId");
-        Integer status    = (Integer) body.get("status");
+        Integer requestId=(Integer)body.get("requestId");
+        Integer senderId=(Integer)body.get("senderId");
+        Integer status=(Integer)body.get("status");
         return contactService.handleRequest(requestId, senderId, currentUserId(), status);
     }
 
-    // ★ 新增：检测两人是否为好友
+    //检测两人是否为好友
     @GetMapping("/is-friend")
-    public Result<Integer> isFriend(
-            @RequestParam Integer userId,
-            @RequestParam Integer friendId) {
+    public Result<Integer> isFriend(@RequestParam Integer userId, @RequestParam Integer friendId) {
         return contactService.isFriend(userId, friendId);
     }
 
-    // ★ 新增：检测是否已有待处理的好友申请
+    //检测是否已有待处理的好友申请
     @GetMapping("/has-pending-request")
-    public Result<Boolean> hasPendingRequest(
-            @RequestParam Integer senderId,
-            @RequestParam Integer receiverId) {
+    public Result<Boolean> hasPendingRequest(@RequestParam Integer senderId, @RequestParam Integer receiverId) {
         return contactService.hasPendingRequest(senderId, receiverId);
     }
 }

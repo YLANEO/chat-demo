@@ -5,7 +5,6 @@ import { ElMessage } from 'element-plus'
 
 import type { User as UserType, FriendRequest } from '@/types/api'
 import {
-  getFriendListService,
   searchUserService,
   sendFriendRequestService,
   getFriendRequestListService,
@@ -15,17 +14,19 @@ import {
 } from '@/api/contact'
 import { chatSocket } from '@/utils/websocket'
 import { useUserStore } from '@/stores/userStore'
+import { useFriendStore } from '@/stores/friendStore'
 import { resolveAvatarUrl } from '@/utils/avatar'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const router = useRouter()
+const friendStore = useFriendStore()
 
 // ============================ Tab 状态 ============================
 const activeTab = ref<'friends' | 'requests'>('friends')
 
 // ============================ 好友列表 ============================
-const friendList = ref<UserType[]>([])
+// 改用 friendStore，不再维护本地 ref；statusUpdate 事件在 App.vue 全局触发 store 刷新
 const friendLoading = ref(false)
 
 // ============================ 申请列表 ============================
@@ -44,30 +45,17 @@ const searchUserStatusMap = ref<Record<number, UserStatus>>({})
 
 // ============================ 初始化 ============================
 onMounted(async () => {
-  await Promise.all([loadFriends(), loadRequests()])
+  await Promise.all([loadRequests()])
 
   chatSocket.on('friendRequest', loadRequests)
-  chatSocket.on('friendListUpdate', loadFriends)
-  chatSocket.connect()
+  // friendList 数据从 friendStore 读取，statusUpdate 由 App.vue 全局触发 loadFriends
 })
 
 onBeforeUnmount(() => {
   chatSocket.off('friendRequest', loadRequests)
-  chatSocket.off('friendListUpdate', loadFriends)
 })
 
 // ============================ 加载数据 ============================
-async function loadFriends() {
-  friendLoading.value = true
-  try {
-    friendList.value = await getFriendListService()
-  } catch (e) {
-    ElMessage.error('获取好友列表失败')
-  } finally {
-    friendLoading.value = false
-  }
-}
-
 async function loadRequests() {
   requestLoading.value = true
   try {
@@ -167,7 +155,7 @@ async function handleRequest(friendRequest: FriendRequest, status: 1 | 2) {
     ElMessage.success(`已${action}`)
     // 如果是同意，刷新好友列表
     if (status === 1) {
-      await loadFriends()
+      await friendStore.loadFriends()
     }
   } catch (e) {
     ElMessage.error(`${action}失败`)
@@ -202,7 +190,7 @@ function resolveAvatar(url: string) {
 
 const pendingCount = computed(() => requestList.value.length)
 
-const filteredFriends = computed(() => friendList.value)
+const filteredFriends = computed(() => friendStore.friends)
 
 const showSearchResults = computed(() => searchKeyword.value.trim().length > 0)
 </script>
@@ -213,13 +201,13 @@ const showSearchResults = computed(() => searchKeyword.value.trim().length > 0)
     <!-- Tab 切换 -->
     <div class="tab-bar">
       <button class="tab-btn" :class="{ active: activeTab === 'friends' }" @click="activeTab = 'friends'">
-        <User />
+        <!-- <User /> -->
         <span>好友</span>
-        <span class="tab-count">{{ friendList.length }}</span>
+        <span class="tab-count">{{ friendStore.friends.length }}</span>
       </button>
       <button class="tab-btn" :class="{ active: activeTab === 'requests' }" @click="activeTab = 'requests'">
-        <Bell />
-        <span>申请</span>
+        <!-- <Bell /> -->
+        <span>好友申请</span>
         <span class="tab-count badge" v-if="pendingCount > 0">{{ pendingCount }}</span>
       </button>
     </div>
@@ -228,11 +216,16 @@ const showSearchResults = computed(() => searchKeyword.value.trim().length > 0)
       <div v-for="f in filteredFriends" :key="f.userid" class="friend-item" @click="startChat(f)">
         <div class="friend-avatar">
           <img :src="resolveAvatar(f.avatar_url)" :alt="f.nickname" />
-          <span class="online-dot" v-if="f.status === 1"></span>
         </div>
         <div class="friend-info">
-          <div class="friend-name"> {{ f.nickname || f.username }} </div>
-          <div class="friend-username">@{{ f.username }}</div>
+          <div class="friend-text">
+            <div class="friend-name"> {{ f.nickname || f.username }} </div>
+            <div class="friend-username">@{{ f.username }}</div>
+          </div>
+          <span class="friend-status" :class="f.status === 1 ? 'is-online' : 'is-offline'">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ f.status === 1 ? '在线' : '离线' }}</span>
+          </span>
         </div>
         <el-button text :icon="ChatDotRound" @click.stop="startChat(f)" title="发起聊天" />
       </div>
@@ -435,21 +428,18 @@ const showSearchResults = computed(() => searchKeyword.value.trim().length > 0)
       border-radius: 5px;
       object-fit: cover;
     }
-
-    .online-dot {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 10px;
-      height: 10px;
-      border-radius: 5px;
-      background: #2ecc71;
-      border: 2px solid rgba(0, 0, 0, 0.08);
-    }
   }
 
   .friend-info {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .friend-text {
     min-width: 0;
   }
 
@@ -468,6 +458,41 @@ const showSearchResults = computed(() => searchKeyword.value.trim().length > 0)
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .friend-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    white-space: nowrap;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+
+  .friend-status .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .friend-status.is-online .status-dot {
+    background: #2ecc71;
+    box-shadow: 0 0 4px #2ecc71;
+  }
+
+  .friend-status.is-online .status-text {
+    color: #2ecc71;
+  }
+
+  .friend-status.is-offline .status-dot {
+    background: #999;
+  }
+
+  .friend-status.is-offline .status-text {
+    color: #999;
   }
 }
 

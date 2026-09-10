@@ -13,9 +13,9 @@ export const sendMessageService = (friendId: number, type: number, content: stri
 // 标记消息为已读
 export const markReadService = (friendId: number) =>
   request.post<number>(`/message/read`, { friendId })
-//
+// 获取未读消息数
 export const getUnreadCountService = (friendId: number) =>
   request.get<number>(`/message/unread-count`, { params: { friendId } })
-
+// 获得未读消息数
 export const getTotalUnreadService = () =>
   request.get<number>(`/message/total-unread`)

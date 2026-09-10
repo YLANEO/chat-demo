@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { ChatDotRound, Picture, Microphone, Promotion, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 import type { User, ChatMessage } from '@/types/api'
-import { getFriendListService } from '@/api/contact'
-import { getMessageHistoryService, sendMessageService, markReadService } from '@/api/message'
-import { chatSocket } from '@/utils/websocket'
+import { getMessageHistoryService } from '@/api/message'
 import { useUserStore } from '@/stores/userStore'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { useMessageStore } from '@/stores/messageStore'
+import { useFriendStore } from '@/stores/friendStore'
+
 
 /* =============================================================
  * 全局对象：好友列表 / 当前选中 / 历史消息 / 最近一条消息
  * 全在这一个组件内维护，方便追踪所有状态变化
  * ============================================================= */
+const messageStore = useMessageStore()
 const userStore = useUserStore()
-
-const friends = ref<User[]>([])                       // 左侧好友列表
-const activeFriendId = ref<number | null>(null)              // 当前选中的好友
-const messages = ref<ChatMessage[]>([])                // 当前会话消息
-const lastMsgMap = ref<Record<number, ChatMessage>>({})  // 好友id -> 最新一条
-const unreadMap = ref<Record<number, number>>({})       // 好友id -> 未读数
+const friendStore = useFriendStore()
+const activeFriendId = ref<number | null>(null)// 当前选中的好友
+// 当前会话消息：computed 从 store 取，自动跟随 activeFriendId 和 ws 推送同步
+const messages = computed<ChatMessage[]>(() => {
+  const fid = activeFriendId.value
+  if (fid == null) return []
+  return messageStore.messageMap[fid] ?? []
+})
 const loading = ref(false)
 const inputText = ref('')
 const messageListRef = ref<HTMLElement | null>(null)
@@ -28,34 +32,20 @@ const messageListRef = ref<HTMLElement | null>(null)
 const searchKeyword = ref('')
 
 const activeFriend = computed<User | undefined>(() =>
-  friends.value.find(f => f.userid === activeFriendId.value)
+  friendStore.friends.find(f => f.userid === activeFriendId.value)
 )
 
 /* =============================================================
  * 1. 进入页面：拉好友列表、连 WS、默认选第一个好友
  * ============================================================= */
 onMounted(async () => {
-  try {
-    friends.value = await getFriendListService()
-  } catch (e) {
-    ElMessage.error('获取好友列表失败' + e)
+  // 好友列表加载已提到 App.vue 全局（登录后统一拉一次），这里直接复用
+  await friendStore.loadFriends()
+
+  // 默认打开第一个好友（selectFriend 会同步设置 store.activeFriendId）
+  if (friendStore.friends.length > 0 && activeFriendId.value == null) {
+    await selectFriend(friendStore.friends[0].userid)
   }
-
-  // 全局唯一 WS 连接 + 注册本页要监听的 type
-  chatSocket.on('chat', onWsChat)
-  chatSocket.on('read', onWsRead)
-  chatSocket.connect()
-
-  // 默认打开第一个好友
-  if (friends.value.length > 0 && activeFriendId.value == null) {
-    await selectFriend(friends.value[0].userid)
-  }
-})
-
-onBeforeUnmount(() => {
-  // 离开页面只解绑监听，不关 WS（WS 是 app 级单例）
-  chatSocket.off('chat', onWsChat)
-  chatSocket.off('read', onWsRead)
 })
 
 /* =============================================================
@@ -66,17 +56,20 @@ async function selectFriend(fid: number) {
     scrollToBottom()
     return
   }
+  // 先告诉 store"现在和谁在聊"，未读清零在这里完成
+  messageStore.active(fid)
   activeFriendId.value = fid
   loading.value = true
   try {
-    messages.value = await getMessageHistoryService(fid)
+    // 历史消息写回 store，messages（computed）会自动同步
+    const history = await getMessageHistoryService(fid)
+    messageStore.setMessages(fid, history)
     await nextTick()
     scrollToBottom()
 
-    // 如果该好友有未读，自动标已读
-    if ((unreadMap.value[fid] || 0) > 0) {
-      await markReadService(fid).catch(() => { })
-      unreadMap.value[fid] = 0
+    // 如果该好友有未读（store 里已清零，但保险起见也走一遍 markRead）
+    if ((messageStore.unreadMap[fid] || 0) > 0) {
+      await messageStore.markRead(fid).catch(() => { })
     }
   } catch (e) {
     ElMessage.error('加载历史消息失败')
@@ -86,90 +79,26 @@ async function selectFriend(fid: number) {
 }
 
 /* =============================================================
- * 3. 发送消息：乐观追加 -> HTTP 落库 -> 替换临时消息为后端真实记录
+ * 3. 发送消息：完全交给 messageStore（乐观+回执替换在一处处理）
  * ============================================================= */
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || activeFriendId.value == null) return
 
   const fid = activeFriendId.value
-  const tempId = -Date.now() // 临时 id，负数不会跟数据库冲突
-
-  // 1) 立刻把消息画到界面上（乐观更新）
-  const optimistic: ChatMessage = {
-    chatMessageId: tempId,
-    senderId: userStore.userId!,
-    receiverId: fid,
-    type: 0,
-    content: text,
-    readAt: null,
-    status: 0,
-    createTime: new Date().toISOString(),
-    updateTime: new Date().toISOString(),
-  }
-  messages.value.push(optimistic)
-  lastMsgMap.value[fid] = optimistic
-  inputText.value = ''
-  await nextTick()
-  scrollToBottom()
-
-  // 2) 调接口发出去
   try {
-    const saved = await sendMessageService(fid, 0, text)
-    // 用后端真实记录把临时消息换掉
-    const idx = messages.value.findIndex(m => m.chatMessageId === tempId)
-    if (idx >= 0) messages.value[idx] = saved
-    lastMsgMap.value[fid] = saved
+    await messageStore.sendMessage(fid, text)
+    inputText.value = ''
+    await nextTick()
+    scrollToBottom()
   } catch {
-    const idx = messages.value.findIndex(m => m.chatMessageId === tempId)
-    if (idx >= 0) messages.value[idx].status = 1   // 标失败
     ElMessage.error('发送失败')
   }
 }
 
 /* =============================================================
- * 4. WebSocket 回调
- *    - onWsChat : 收到聊天消息（对方发的或自己同步来的）
- *    - onWsRead : 收到已读回执
+ * 4. WebSocket 回调已上移至 App.vue（全局单例）
  * ============================================================= */
-function onWsChat(payload: any) {
-  // 服务端约定：payload.content 才是真正的 ChatMessage
-  const m: ChatMessage = payload.content ?? payload
-  const me = userStore.userId
-  if (!me || !m) return
-
-  // 判断当前是和谁在说话
-  const fid = m.senderId === me ? m.receiverId : m.senderId
-
-  // 更新左侧好友最新消息预览
-  lastMsgMap.value[fid] = m
-
-  // 对方发来的：加未读 + 更新好友为在线
-  if (m.senderId !== me) {
-    unreadMap.value[fid] = (unreadMap.value[fid] ?? 0) + 1
-    const f = friends.value.find(x => x.userid === fid)
-    if (f && f.status === 0) f.status = 1
-  }
-
-  // 当前正在和 fid 聊天 -> 直接追加；并自动标已读
-  if (activeFriendId.value === fid) {
-    // 避免重复：自己发的不在这里再 add（HTTP 已经 add 了）
-    if (m.senderId !== me && !messages.value.some(x => x.chatMessageId === m.chatMessageId)) {
-      messages.value.push(m)
-      markReadService(fid).catch(() => { })
-      nextTick(() => scrollToBottom())
-    }
-  }
-}
-
-function onWsRead(_payload: any) {
-  // 把"我发给对方的"消息全部标已读
-  const me = userStore.userId
-  if (!me) return
-  messages.value
-    .filter(x => x.senderId === me && !x.readAt)
-    .forEach(x => x.readAt = new Date().toISOString())
-}
 
 /* =============================================================
  * 5. 工具函数
@@ -191,7 +120,7 @@ function formatTime(iso: string | null | undefined): string {
 }
 
 function previewText(fid: number): string {
-  const m = lastMsgMap.value[fid]
+  const m = messageStore.lastMsgMap[fid]
   if (!m) return ' '
   if (m.type === 1) return '[图片]'
   if (m.type === 2) return '[文件]'
@@ -214,8 +143,8 @@ function handleEnterKey(e: KeyboardEvent) {
  * ============================================================= */
 const filteredFriends = computed<User[]>(() => {
   const k = searchKeyword.value.trim().toLowerCase()
-  if (!k) return friends.value
-  return friends.value.filter(
+  if (!k) return friendStore.friends
+  return friendStore.friends.filter(
     f => f.username.toLowerCase().includes(k) ||
       f.nickname.toLowerCase().includes(k)
   )
@@ -230,29 +159,36 @@ const filteredFriends = computed<User[]>(() => {
     <div class="friend-search">
       <el-input v-model="searchKeyword" placeholder="搜索好友" :prefix-icon="Search" clearable />
     </div>
+    <!-- 聊天页面的好友列表 -->
     <div class="friend-scroll">
+      <!-- 每个好友的内容 -->
       <div v-for="f in filteredFriends" :key="f.userid" class="friend-item" :class="{ active: f.userid === activeFriendId }" @click="selectFriend(f.userid)">
+        <!-- 头像 -->
         <div class="friend-avatar">
           <img :src="resolveAvatar(f.avatar_url)" :alt="f.nickname" />
-          <span class="online-dot" v-if="f.status === 1"></span>
         </div>
+        <!--  -->
         <div class="friend-info">
           <div class="friend-top">
-            <span class="friend-name">{{ f.nickname || f.username }}</span>
-            <span class="friend-time"> {{ formatTime(lastMsgMap[f.userid]?.createTime) }} </span>
+            <span class="friend-name-line">
+              <span class="friend-name">{{ f.nickname || f.username }}</span>
+              <span class="friend-username">@{{ f.username }}</span>
+            </span>
+            <span class="friend-status" :class="f.status === 1 ? 'is-online' : 'is-offline'">
+              <span class="status-dot"></span>
+              <span class="status-text">{{ f.status === 1 ? '在线' : '离线' }}</span>
+            </span>
           </div>
           <div class="friend-bottom">
             <span class="friend-msg">{{ previewText(f.userid) }}</span>
-            <span class="friend-badge" v-if="(unreadMap[f.userid] || 0) > 0"> {{ unreadMap[f.userid] }} </span>
+            <span class="friend-badge" v-if="(messageStore.unreadMap[f.userid] || 0) > 0"> {{ messageStore.unreadMap[f.userid] }} </span>
           </div>
         </div>
       </div>
-      <div v-if="friends.length === 0" class="empty-friend">暂无好友</div>
+      <div v-if="filteredFriends.length === 0" class="empty-friend">暂无好友</div>
     </div>
   </aside>
-  <!-- ===========================================
-          右侧聊天区
-          =========================================== -->
+  <!-- 右侧聊天区 -->
   <section class="chat-area">
     <!-- 空状态 -->
     <div v-if="!activeFriend" class="empty-tip">
@@ -265,9 +201,12 @@ const filteredFriends = computed<User[]>(() => {
       <!-- 顶部 -->
       <header class="chat-header">
         <img :src="resolveAvatar(activeFriend.avatar_url)" class="chat-header-avatar" :alt="activeFriend.nickname" />
-        <div>
+        <div class="chat-header-meta">
           <div class="chat-header-name"> {{ activeFriend.nickname || activeFriend.username }} </div>
-          <div class="chat-header-status"> {{ activeFriend.status === 1 ? '在线' : '离线' }} </div>
+          <div class="chat-header-status" :class="activeFriend.status === 1 ? 'is-online' : 'is-offline'">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ activeFriend.status === 1 ? '在线' : '离线' }}</span>
+          </div>
         </div>
       </header>
       <!-- 中间消息列表 -->
@@ -277,7 +216,7 @@ const filteredFriends = computed<User[]>(() => {
             <template v-if="m.type === 4">[系统消息] {{ m.content }}</template>
             <template v-else>{{ m.content }}</template>
           </div>
-          <div class="message-time"> {{ formatTime(m.createTime) }} <span v-if="m.status === 1" class="send-fail">发送失败</span>
+          <div class="message-time"> {{ formatTime(m.createTime) }}
           </div>
         </div>
         <div v-if="!loading && messages.length === 0" class="empty-msg"> 暂无消息，开始聊天吧 👋 </div>
@@ -377,17 +316,6 @@ const filteredFriends = computed<User[]>(() => {
       border-radius: 5px;
       object-fit: cover;
     }
-
-    .online-dot {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 10px;
-      height: 10px;
-      border-radius: 5px;
-      background: #2ecc71;
-      border: 2px solid var(--theme-sidebar-bg);
-    }
   }
 
   .friend-info {
@@ -401,6 +329,14 @@ const filteredFriends = computed<User[]>(() => {
     align-items: center;
   }
 
+  .friend-name-line {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
   .friend-name {
     font-size: 14px;
     font-weight: 500;
@@ -408,13 +344,52 @@ const filteredFriends = computed<User[]>(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
   }
 
-  .friend-time {
+  .friend-username {
     font-size: 11px;
     color: var(--theme-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .friend-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
     flex-shrink: 0;
-    margin-left: 6px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .friend-status.is-online .status-dot {
+    background: #2ecc71;
+    box-shadow: 0 0 4px #2ecc71;
+  }
+
+  .friend-status.is-online .status-text {
+    color: #2ecc71;
+  }
+
+  .friend-status.is-offline .status-dot {
+    background: #999;
+  }
+
+  .friend-status.is-offline .status-text {
+    color: #999;
   }
 
   .friend-bottom {
@@ -491,7 +466,32 @@ const filteredFriends = computed<User[]>(() => {
 }
 
 .chat-header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
+}
+
+.chat-header-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chat-header-status.is-online .status-dot {
+  background: #2ecc71;
+  box-shadow: 0 0 4px #2ecc71;
+}
+
+.chat-header-status.is-online .status-text {
+  color: #2ecc71;
+}
+
+.chat-header-status.is-offline .status-dot {
+  background: #999;
+}
+
+.chat-header-status.is-offline .status-text {
   color: var(--theme-text-muted);
 }
 

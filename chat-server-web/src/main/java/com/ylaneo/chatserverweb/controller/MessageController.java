@@ -34,10 +34,8 @@ public class MessageController {
      * GET /api/message/page?friendId=2&lastMessageId=100&limit=20
      */
     @GetMapping("/page")
-    public Result<List<ChatMessage>> getPage(
-            @RequestParam Integer friendId,
-            @RequestParam(required = false) Long lastMessageId,
-            @RequestParam(defaultValue = "20") Integer limit) {
+    public Result<List<ChatMessage>> getPage(@RequestParam Integer friendId,
+         @RequestParam(required = false) Long lastMessageId, @RequestParam(defaultValue = "20") Integer limit) {
         return messageService.getHistoryMessage(currentUserId(), friendId, lastMessageId, limit);
     }
     /**
