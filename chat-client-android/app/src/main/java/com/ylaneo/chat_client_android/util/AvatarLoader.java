@@ -40,6 +40,9 @@ public class AvatarLoader {
     /** 主线程 Handler，用于回填 ImageView */
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
+    /** ImageView.setTag 的 key，避免 RecyclerView 复用时旧请求回填错图 */
+    private static final int TAG_URL = 0x7F0A_0001;
+
     /**
      * 把服务器存的 avatar_url 转成真正可访问的 HTTP URL
      *
@@ -58,12 +61,25 @@ public class AvatarLoader {
         if (rawUrl.startsWith("/uploads/")) {
             return Constants.HTTP_BASE_URL + rawUrl;
         }
-        // Windows 磁盘路径（D:/xxx、C:/xxx）
+        // Windows 磁盘路径（D:/xxx、C:/xxx，也兼容 D:\xxx）
         if (rawUrl.matches("^[A-Za-z]:[\\\\/].*")) {
-            String fileName = rawUrl.substring(rawUrl.lastIndexOf('\\') + 1);
-            // 没有 \ 用 / 再切一次（兼容 Linux 路径或正斜杠的 Windows 路径）
+            // 优先按 / 切（数据库里通常存正斜杠路径，如 D:/files_D/avatar_chat_demo/user_2.png）
+            String fileName = "";
+            int slashIdx = rawUrl.lastIndexOf('/');
+            if (slashIdx >= 0 && slashIdx + 1 < rawUrl.length()) {
+                fileName = rawUrl.substring(slashIdx + 1);
+            }
+            // 兜底按 \ 切（兼容反斜杠路径）
             if (fileName.isEmpty()) {
-                fileName = rawUrl.substring(rawUrl.lastIndexOf('/') + 1);
+                int bsIdx = rawUrl.lastIndexOf('\\');
+                if (bsIdx >= 0 && bsIdx + 1 < rawUrl.length()) {
+                    fileName = rawUrl.substring(bsIdx + 1);
+                }
+            }
+            // 最后兜底：实在切不出来就用整个路径，避免静默失败
+            if (fileName.isEmpty()) {
+                fileName = rawUrl;
+                Log.w(TAG, "无法从磁盘路径里提取文件名: " + rawUrl);
             }
             return Constants.HTTP_BASE_URL + "/uploads/" + fileName;
         }
@@ -78,14 +94,16 @@ public class AvatarLoader {
      *   - 内存缓存
      *   - 默认头像
      *   - 加载失败回退到默认头像
+     *   - ImageView 复用时旧请求回填错图（用 tag 锁）
      */
     public static void load(ImageView view, String rawUrl) {
         String url = resolveUrl(rawUrl);
+
+        // 先把当前请求的 URL 写到 tag 上，用于 ImageView 复用校验
+        view.setTag(TAG_URL, url);
+
         if (url == null) {
-            view.setImageResource(android.R.drawable.ic_menu_gallery);
-            // 用我们的 vector 默认头像更合适
-            view.setImageResource(view.getContext().getResources().getIdentifier(
-                    "ic_default_avatar", "drawable", view.getContext().getPackageName()));
+            view.setImageResource(getDefaultAvatarResId(view));
             return;
         }
 
@@ -97,9 +115,7 @@ public class AvatarLoader {
         }
 
         // 2. 设置占位图
-        int placeholderId = view.getContext().getResources().getIdentifier(
-                "ic_default_avatar", "drawable", view.getContext().getPackageName());
-        view.setImageResource(placeholderId);
+        view.setImageResource(getDefaultAvatarResId(view));
 
         final String finalUrl = url;
         executor.execute(() -> {
@@ -107,13 +123,21 @@ public class AvatarLoader {
             if (bmp != null) {
                 cache.put(finalUrl, bmp);
                 mainHandler.post(() -> {
-                    // 二次校验：ImageView 可能已经被复用
-                    if (view.getTag() == null || finalUrl.equals(view.getTag())) {
+                    // 二次校验：tag 还是同一个 URL 才回填，避免 RecyclerView 复用时错图
+                    Object current = view.getTag(TAG_URL);
+                    if (finalUrl.equals(current)) {
                         view.setImageBitmap(bmp);
                     }
                 });
             }
         });
+    }
+
+    /** 取出 vector 默认头像的资源 id，找不到就退化到系统自带 */
+    private static int getDefaultAvatarResId(ImageView view) {
+        int id = view.getContext().getResources().getIdentifier(
+                "ic_default_avatar", "drawable", view.getContext().getPackageName());
+        return id != 0 ? id : android.R.drawable.ic_menu_gallery;
     }
 
     private static Bitmap downloadBitmap(String urlStr) {
@@ -131,9 +155,14 @@ public class AvatarLoader {
                 return null;
             }
             is = conn.getInputStream();
-            return BitmapFactory.decodeStream(is);
+            Bitmap bmp = BitmapFactory.decodeStream(is);
+            if (bmp == null) {
+                Log.w(TAG, "BitmapFactory.decodeStream 返回 null, url=" + urlStr);
+            }
+            return bmp;
         } catch (IOException e) {
-            Log.w(TAG, "下载头像异常: " + e.getMessage() + ", url=" + urlStr);
+            Log.w(TAG, "下载头像异常: " + e.getClass().getSimpleName() + ": "
+                    + e.getMessage() + ", url=" + urlStr);
             return null;
         } finally {
             if (is != null) {
