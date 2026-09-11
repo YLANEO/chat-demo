@@ -1,24 +1,53 @@
 package com.ylaneo.chatserverweb.exception;
 
 import com.ylaneo.chatserverweb.entity.Result;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    //Result仍然是通用的返回类型
-    public Result handleException(Exception e)
-    {
-        //先输出到后台
-        e.printStackTrace();
-        //返回给前端错误信息
-        //return Result.error(e.getMessage());
-        //不用前面那个的原因是不确定e.getMessage()是否有返回信息，为了保证健壮性先进行判断，如果没有返回则自己添加返回信息
-        return Result.error(StringUtils.hasLength(e.getMessage())?e.getMessage():"操作失败");
-
+    /**
+     * 404：路径不存在/静态资源找不到
+     *
+     * Spring Boot 3.2+ 把静态资源404改成抛NoResourceFoundException，
+     * controller路径找不到抛 NoHandlerFoundException。
+     * 这两个会被Exception.class的handler截胡，必须单独声明。
+     */
+    @ExceptionHandler({ NoResourceFoundException.class, NoHandlerFoundException.class })
+    public ResponseEntity<Result> handleNotFound(Exception e) {
+        //不打印stacktrace，因为这是正常的"找不到"，不是bug
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Result.error(1, StringUtils.hasLength(e.getMessage()) ? e.getMessage() : "资源不存在"));
     }
 
+    /**
+     * 400：参数错误/业务参数校验
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Result> handleBadRequest(IllegalArgumentException e) {
+        e.printStackTrace();
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(1, StringUtils.hasLength(e.getMessage()) ? e.getMessage() : "参数错误"));
+    }
+
+    /**
+     * 其他错误用500：其它未预期异常（系统错误）
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Result> handleException(Exception e) {
+        e.printStackTrace();
+        String msg = StringUtils.hasLength(e.getMessage()) ? e.getMessage() : "操作失败";
+        //code=2区分系统错误，方便前端按code区分业务错误与系统错误
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Result.error(2, msg));
+    }
 }

@@ -25,8 +25,13 @@ public class Result<T> {
         return new Result(0, "操作成功", null);
     }
 
-    //操作失败，返回失败
+    //操作失败，返回失败（业务错误code=1）
     public static Result error(String message) {
         return new Result(1, message, null);
+    }
+
+    //操作失败，自定义业务code（用于GlobalExceptionHandler按异常类型返回不同code）
+    public static Result error(Integer code, String message) {
+        return new Result(code, message, null);
     }
 }
