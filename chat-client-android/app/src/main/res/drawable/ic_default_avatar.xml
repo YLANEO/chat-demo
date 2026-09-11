@@ -1,0 +1,19 @@
+<!-- 默认头像 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- 圆形背景 -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M24,24m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
+    <!-- 头部圆形 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,16m-7,0a7,7 0,1 1,14 0a7,7 0,1 1,-14 0" />
+    <!-- 身体弧形 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,40 C10,32 16,28 24,28 C32,28 38,32 38,40 L38,44 L10,44 Z" />
+</vector>
