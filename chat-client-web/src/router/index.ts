@@ -25,8 +25,13 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+// const router = createRouter({
+//   history: createWebHistory(import.meta.env.BASE_URL),
+//   routes,
+// })
+
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory('/'),
   routes,
 })
 
@@ -40,10 +45,11 @@ const router = createRouter({
 //   }
 // })
 
-//
-router.beforeEach((to) => {
+//to表示即将访问的路由，from表示从哪个路由访问的。其实没有用到from，但是先写上。
+router.beforeEach((to, from) => {
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    //这里的return其实是原来废弃的next()的替代，所以直接return即可。
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
   // 不需要 return undefined，让路由正常通过即可

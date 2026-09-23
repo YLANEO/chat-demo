@@ -9,11 +9,12 @@ public class Constants {
     }
 
     // 网络相关（由 TcpClient 引用）
-    public static final String SERVER_HOST = "192.168.5.15"; // 后端服务器 IP（与 TcpClient 一致）
+    public static final String SERVER_HOST = "10.17.112.24"; // 后端服务器 IP（与 TcpClient 一致）
+//    public static final String SERVER_HOST = "localhost";
     public static final int SERVER_PORT = 20001;
 
     // HTTP 基础地址（用于加载头像等静态资源，与 TCP 端口不同）
-    public static final String HTTP_BASE_URL = "http://192.168.5.15:8080";
+    public static final String HTTP_BASE_URL = "http://10.17.112.24:8080";
 
     // 消息类型
     public static final int MESSAGE_TYPE_TEXT = 0;

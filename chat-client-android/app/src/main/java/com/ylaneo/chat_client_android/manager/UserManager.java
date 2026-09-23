@@ -88,4 +88,34 @@ public class UserManager {
             // 状态更新失败不抛异常
         }
     }
+
+    /**
+     * 获取单个用户的完整资料
+     * 服务端 <getUserData> 接口返回格式：<0><msg><username><nickname><avatar_url><status>
+     *
+     * 用于聊天页面进入时刷新当前用户自己的头像等场景。
+     * 失败/解析异常返回 null，调用方按需处理。
+     */
+    public User getUserData(int userId) {
+        String request = "<getUserData>" + "<" + userId + ">";
+        try {
+            String response = TcpClient.getInstance().sendRequest(request);
+            ProtocolUtil.ParsedResponse pr = ProtocolUtil.parseResponse(response);
+            if (!pr.isSuccess() || pr.data.size() < 4) {
+                return null;
+            }
+            User u = new User();
+            u.setUserid(userId);
+            u.setUsername(pr.data.get(0));
+            u.setNickname(pr.data.get(1));
+            u.setAvatarUrl(pr.data.get(2));
+            try {
+                u.setStatus(Integer.parseInt(pr.data.get(3)));
+            } catch (NumberFormatException ignore) {
+            }
+            return u;
+        } catch (IOException e) {
+            return null;
+        }
+    }
 }

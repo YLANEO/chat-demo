@@ -16,6 +16,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.ylaneo.chat_client_android.R;
 import com.ylaneo.chat_client_android.manager.ContactManager;
 import com.ylaneo.chat_client_android.manager.MessageManager;
+import com.ylaneo.chat_client_android.manager.UserManager;
 import com.ylaneo.chat_client_android.model.ChatMessage;
 import com.ylaneo.chat_client_android.model.User;
 import com.ylaneo.chat_client_android.network.PushListener;
@@ -31,6 +32,7 @@ public class ChatActivity extends AppCompatActivity implements PushListener.Push
 
     public static final String EXTRA_FRIEND_ID = "friendId";
     public static final String EXTRA_FRIEND_NAME = "friendName";
+    public static final String EXTRA_FRIEND_AVATAR = "friendAvatar";
 
     private ImageButton btnBack;
     private TextView tvTitle;
@@ -40,6 +42,7 @@ public class ChatActivity extends AppCompatActivity implements PushListener.Push
 
     private int friendId;
     private String friendName;
+    private String friendAvatar;
     private Integer currentUserId;
 
     private ChatMessageAdapter adapter;
@@ -53,6 +56,7 @@ public class ChatActivity extends AppCompatActivity implements PushListener.Push
 
         friendId = getIntent().getIntExtra(EXTRA_FRIEND_ID, -1);
         friendName = getIntent().getStringExtra(EXTRA_FRIEND_NAME);
+        friendAvatar = getIntent().getStringExtra(EXTRA_FRIEND_AVATAR);
         currentUserId = UserSession.getInstance().getCurrentUserId();
 
         if (friendId == -1 || currentUserId == null) {
@@ -83,6 +87,11 @@ public class ChatActivity extends AppCompatActivity implements PushListener.Push
         tvTitle.setText(friendName != null ? friendName : "聊天");
 
         adapter = new ChatMessageAdapter();
+        // 双方头像 URL 先注入 adapter，onBindViewHolder 里再据此选择显示哪张
+        adapter.setFriendAvatar(friendAvatar);
+        if (UserSession.getInstance().getCurrentUser() != null) {
+            adapter.setSelfAvatar(UserSession.getInstance().getCurrentUser().getAvatarUrl());
+        }
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         rvMessages.setLayoutManager(layoutManager);
@@ -91,6 +100,29 @@ public class ChatActivity extends AppCompatActivity implements PushListener.Push
         btnBack.setOnClickListener(v -> finish());
 
         btnSend.setOnClickListener(v -> handleSend());
+
+        // 自己头像：登录接口只回了 userId/username，没回 avatarUrl，
+        // 这里主动拉一次 <getUserData> 把头像补上（顺带也是拿最新的）。
+        refreshSelfAvatar();
+    }
+
+    private void refreshSelfAvatar() {
+        Integer uid = UserSession.getInstance().getCurrentUserId();
+        if (uid == null) return;
+        new Thread(() -> {
+            User fresh = UserManager.getInstance().getUserData(uid);
+            if (fresh == null || fresh.getAvatarUrl() == null || fresh.getAvatarUrl().isEmpty()) {
+                return;
+            }
+            // 回填 session，避免下次进来再走一次网络
+            User cur = UserSession.getInstance().getCurrentUser();
+            if (cur != null) {
+                cur.setAvatarUrl(fresh.getAvatarUrl());
+                if (fresh.getNickname() != null) cur.setNickname(fresh.getNickname());
+                if (fresh.getUsername() != null) cur.setUsername(fresh.getUsername());
+            }
+            mainHandler.post(() -> adapter.setSelfAvatar(fresh.getAvatarUrl()));
+        }).start();
     }
 
     private void loadMessages() {

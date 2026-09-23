@@ -1,5 +1,5 @@
 import request from './request'
-import type { ChatMessage } from '@/types/api'   // 见 3.2 节的类型定义
+import type { ChatMessage } from '@/types/api'
 
 // 获取历史消息，与后端ChatMessage字段对齐
 export const getMessageHistoryService = (friendId: number) =>
@@ -8,8 +8,10 @@ export const getMessageHistoryService = (friendId: number) =>
 export const getMessagePageService = (friendId: number, lastMessageId?: number, limit = 20) =>
   request.get<ChatMessage[]>(`/message/page`, { params: { friendId, lastMessageId, limit } })
 // 发送消息
+// export const sendMessageService = (friendId: number, type: number, content: string) =>
+//   request.post<ChatMessage>(`/message/send`, { friendId, type, content })
 export const sendMessageService = (friendId: number, type: number, content: string) =>
-  request.post<ChatMessage>(`/message/send`, { friendId, type, content })
+  request.post<ChatMessage>(`/message/send`, null, { params: { friendId, type, content } })
 // 标记消息为已读
 export const markReadService = (friendId: number) =>
   request.post<number>(`/message/read`, { friendId })

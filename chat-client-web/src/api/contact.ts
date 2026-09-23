@@ -1,5 +1,5 @@
 import request from './request'
-import type { User, FriendRequest } from '@/types/api'  // 见下面类型补充
+import type { User, FriendRequest } from '@/types/api'
 
 // 获取所有好友
 export const getFriendListService = () =>
@@ -8,6 +8,7 @@ export const getFriendListService = () =>
 export const searchUserService = (keyword: string) =>
     request.get<User[]>('/contact/search', { params: { keyword } })
 // 发送好友申请
+/* 函数中的参数和对象字面量里的key不需要一致，为了方便写成一致的，后端对应的是字面量里的key */
 export const sendFriendRequestService = (receiverId: number, message: string) =>
     request.post<void>('/contact/request/send', { receiverId, message })
 // 获取所有好友申请

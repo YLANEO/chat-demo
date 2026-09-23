@@ -4,7 +4,9 @@ package com.ylaneo.chatserverweb.config;
 
 import com.ylaneo.chatserverweb.interceptors.LoginInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -24,6 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/user/register", "/user/login", "/uploads/**");
     }
 
+    //注意这里有一个重写，就是把WebMvcConfigurer里面本来有的方法进行...了。定义了资源处理器的路径？然后配置了资源的访问路径？
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 2. 静态资源映射
@@ -32,4 +35,15 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:D:/files_D/avatar_chat_demo");
     }
+
+//    //跨域配置，暂时不用。还是用vue配置代理的方式
+//    @Override
+//    public void addCorsMappings(CorsRegistry registry) {
+//        registry.addMapping("/**")
+//                .allowedOrigins("http://localhost:5173", "http://localhost:8080")
+//                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+//                .allowedHeaders("*")
+//                .allowCredentials(true)
+//                .maxAge(3600);
+//    }
 }

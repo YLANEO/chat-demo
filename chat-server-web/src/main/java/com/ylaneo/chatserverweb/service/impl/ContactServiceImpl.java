@@ -43,7 +43,7 @@ public class ContactServiceImpl implements ContactService {
     public Result sendFriendRequest(Integer senderId, Integer receiverId, String message) {
         Result result = contactDao.sendFriendRequest(senderId, receiverId, message);
         if (result.getCode() == 0) {
-            // web 端推送（JSON）
+            //web端推送（JSON）
             WebSocketMessage ws = new WebSocketMessage();
             ws.setType("friendRequest");
             ws.setSenderId(senderId);
@@ -68,7 +68,7 @@ public class ContactServiceImpl implements ContactService {
     @Override
     public Result handleRequest(Integer friendRequestId, Integer senderId, Integer receiverId, Integer status) {
         Result result = contactDao.handleRequest(friendRequestId, senderId, receiverId, status);
-        // ★ 同意时实时推送双方好友列表更新
+        // 同意时实时推送双方好友列表更新
         if (result.getCode() == 0 && status == 1) {
             // web 端：双向推送 friendListUpdate
             WebSocketMessage ws = new WebSocketMessage();

@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/contact")
-@CrossOrigin
+//@CrossOrigin
 public class ContactController {
 
     @Autowired
@@ -24,16 +24,19 @@ public class ContactController {
         return (Integer) claims.get("userid");
     }
 
+    //获取所有的好友列表
     @GetMapping("/friends")
     public Result<List<User>> friends() {
         return contactService.getFriendList(currentUserId());
     }
 
+    //根据关键词搜索用户的好友
     @GetMapping("/search")
     public Result<List<User>> search(@RequestParam String keyword) {
         return contactService.searchUserByKeyword(keyword, currentUserId());
     }
 
+    //发送好友申请，依旧不需要传当前用户的id，因为可以直接获取
     @PostMapping("/request/send")
     public Result sendRequest(@RequestBody Map<String, Object> body) {
         Integer receiverId = (Integer) body.get("receiverId");
@@ -41,11 +44,13 @@ public class ContactController {
         return contactService.sendFriendRequest(currentUserId(), receiverId, message);
     }
 
+    //获取当前用户的所有的好友申请列表
     @GetMapping("/requests")
     public Result<List<FriendRequestDto>> requests() {
         return contactService.getFriendRequests(currentUserId());
     }
 
+    //处理好友申请
     @PostMapping("/request/handle")
     public Result handleRequest(@RequestBody Map<String, Object> body) {
         Integer requestId=(Integer)body.get("requestId");

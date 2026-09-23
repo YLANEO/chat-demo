@@ -70,6 +70,7 @@ public class MessagesFragment extends Fragment implements PushListener.PushCallb
                 Intent intent = new Intent(requireContext(), ChatActivity.class);
                 intent.putExtra("friendId", user.getUserid());
                 intent.putExtra("friendName", user.getDisplayName());
+                intent.putExtra("friendAvatar", user.getAvatarUrl());
                 startActivity(intent);
             }
 

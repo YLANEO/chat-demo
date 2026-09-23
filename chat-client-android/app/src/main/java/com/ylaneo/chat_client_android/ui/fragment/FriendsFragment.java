@@ -66,7 +66,8 @@ public class FriendsFragment extends Fragment implements PushListener.PushCallba
             public void onUserClick(User user) {
                 Intent intent = new Intent(requireContext(), ChatActivity.class);
                 intent.putExtra("friendId", user.getUserid());
-                intent.putExtra("friendName", user.getDisplayName());
+                intent.putExtra("friendName", user.getDisplayNameWithAt());
+                intent.putExtra("friendAvatar", user.getAvatarUrl());
                 startActivity(intent);
             }
 

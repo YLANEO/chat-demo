@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
+
 import com.ylaneo.chat_client_android.MainActivity;
 import com.ylaneo.chat_client_android.R;
 import com.ylaneo.chat_client_android.manager.UserManager;

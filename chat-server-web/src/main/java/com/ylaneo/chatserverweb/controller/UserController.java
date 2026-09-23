@@ -12,10 +12,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin  // 跨域，前端调得到
+//@CrossOrigin
 public class UserController {
     @Autowired
     UserService userService;
+
     //登录
     @PostMapping("/login")
     public Result<String> login(@RequestParam String username, @RequestParam String password) {
@@ -26,11 +27,13 @@ public class UserController {
         }
         return Result.<String>error(result.getMessage());
     }
+
     //注册
     @PostMapping("/register")
     public Result Register(@RequestBody RegisterDto registerDto) {
         return userService.register(registerDto);
     }
+
     //获取用户信息（不用参数，因为前端请求会带上token，在后端都要经过ThreadLocal步骤，获得用户数据）
     @GetMapping("/info")
     public Result<User> getUserInfo() {

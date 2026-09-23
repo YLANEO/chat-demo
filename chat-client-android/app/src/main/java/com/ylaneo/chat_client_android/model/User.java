@@ -88,4 +88,15 @@ public class User {
         }
         return username != null ? username : "未知用户";
     }
+
+    /**
+     * 列表显示用：displayName + @username（同名时也照常拼接）
+     */
+    public String getDisplayNameWithAt() {
+        String name = getDisplayName();
+        if (username != null && !username.isEmpty()) {
+            return name + "   @" + username;
+        }
+        return name;
+    }
 }

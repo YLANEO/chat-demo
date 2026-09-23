@@ -36,7 +36,7 @@ public class LegacyRequestParser {
         System.out.println("[Legacy] 解析请求: " + request);
         for (String a : strlist) {
             if (!a.isEmpty()) {
-                // 去掉每段末尾的 '>'
+                //去掉每段末尾的'>'
                 String b = a.substring(0, a.length() - 1);
                 params.add(b);
             }

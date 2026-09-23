@@ -4,12 +4,12 @@
 // 默认头像
 const DEFAULT_AVATAR = '/default-avatar.png'
 
-/**
- * 把数据库里查出来的 avatar_url 转成浏览器能加载的 URL
- * 支持三种情况：
- *   1. 本地磁盘路径 D:/files_D/avatar_chat_demo/user_1.png  → /uploads/user_1.png
- *   2. 已经是 HTTP URL  http://xxx/user_1.png                  → 原样返回
- *   3. 空字符串 / null / undefined                            → 默认头像
+/*
+把数据库里查出来的 avatar_url 转成浏览器能加载的 URL
+支持三种情况：
+1. 本地磁盘路径 D:/files_D/avatar_chat_demo/user_1.png  → /uploads/user_1.png
+2. 已经是 HTTP URL  http://xxx/user_1.png                  → 原样返回
+3. 空字符串 / null / undefined                            → 默认头像
  */
 export function resolveAvatarUrl(rawUrl?: string | null): string {
   if (!rawUrl) return DEFAULT_AVATAR

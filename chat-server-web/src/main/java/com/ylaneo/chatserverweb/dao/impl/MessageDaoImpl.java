@@ -131,9 +131,9 @@ public class MessageDaoImpl implements MessageDao {
      */
     @Override
     public Result<List<ChatMessage>> getHistoryMessage(Integer userId, Integer friendId, Long lastMessageId, Integer limit) {
-        String sql = "SELECT * FROM chat_message WHERE ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) " ;
+        String sql = "select * from chat_message where ((sender_id=? and receiver_id=?) or (sender_id=? and receiver_id=?)) " ;
         if (lastMessageId != null) {
-            sql=sql+"AND id < ? ";
+            sql=sql+"and id < ? ";
         }
         sql=sql+"order by id desc limit ?";
         try (Connection conn = new DBConnection().getConnection();

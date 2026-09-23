@@ -26,7 +26,7 @@ public class UserDaoImpl implements UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // User 行的映射器，把 ResultSet 的一行映射成 User 对象
+    //映射器，将从数据库中返回的ResultSet的一行数据库记录映射成一个user对象。
     private final RowMapper<User> userRowMapper = (ResultSet rs, int rowNum) -> {
         User user = new User();
         user.setUserid(rs.getInt("id"));

@@ -52,7 +52,7 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FriendRequestDto request = requests.get(position);
-        holder.tvSenderName.setText(request.getSenderDisplayName());
+        holder.tvSenderName.setText(request.getSenderDisplayNameWithAt());
         holder.tvMessage.setText(request.getMessage() != null ? request.getMessage() : "");
         holder.tvTime.setText(DateTimeUtils.format(request.getCreateTime()));
 

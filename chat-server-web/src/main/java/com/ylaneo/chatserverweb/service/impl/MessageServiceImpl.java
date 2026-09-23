@@ -55,7 +55,7 @@ public class MessageServiceImpl implements MessageService {
             webSocketHandler.pushToUser(receiverId, ws);
             pushNotifier.pushTo(receiverId, legacyPush);
 
-            // 推给发送方（sender）：让 sender 的其他设备也能同步看到这条消息
+            // 推给发送方（sender）：让sender的其他设备也能同步看到这条消息。这里容易遗漏（容易只考虑了一端）
             webSocketHandler.pushToUser(senderId, ws);
             pushNotifier.pushTo(senderId, legacyPush);
         }
@@ -75,7 +75,7 @@ public class MessageServiceImpl implements MessageService {
     /**
      * 标记已读：
      *   1. 批量更新数据库
-     *   2. 推 WebSocket 告诉对方"你的消息已被对方读了"
+     *   2. 推WebSocket告诉对方"你的消息已被对方读了"
      */
     @Override
     public Result<Integer> markAsRead(Integer userId, Integer friendId) {

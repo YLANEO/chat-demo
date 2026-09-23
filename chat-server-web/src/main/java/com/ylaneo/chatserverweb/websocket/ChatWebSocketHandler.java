@@ -12,6 +12,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -152,7 +153,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
     /**
      * 向多个指定用户推送消息（用于状态变更广播给所有好友）
      */
-    public void pushToUsers(java.util.List<Integer> targetUserIds, Object message) {
+    public void pushToUsers(List<Integer> targetUserIds, Object message) {
         String jsonMessage;
         try {
             jsonMessage = objectMapper.writeValueAsString(message);
@@ -174,13 +175,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
     // ====================== 辅助方法 ======================
 
     /**
-     * 从 WebSocketSession 中取出 userId
-     * 登录时会在 session 中存入 userId，格式如：
+     * 从WebSocketSession中取出userId
+     * 登录时会在 session 中存入userId，格式如：
      * uri: ws://localhost:8080/ws/chat?userId=123
      */
     private Integer getUserIdFromSession(WebSocketSession session) {
         try {
-            String query = session.getUri().getQuery();  // "userId=123"
+            String query = session.getUri().getQuery();//"userId=123"
             if (query != null && query.startsWith("userId=")) {
                 return Integer.valueOf(query.substring(7));
             }

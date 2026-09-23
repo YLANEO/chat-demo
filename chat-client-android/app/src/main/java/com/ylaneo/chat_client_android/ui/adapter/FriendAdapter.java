@@ -60,7 +60,7 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         User user = users.get(position);
-        holder.tvName.setText(user.getDisplayName());
+        holder.tvName.setText(user.getDisplayNameWithAt());
 
         if (showAddButton) {
             holder.tvStatus.setVisibility(View.GONE);

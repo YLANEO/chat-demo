@@ -48,12 +48,12 @@ const handleCommand = (command) => {
 </script>
 <template><!-- 全屏背景层 -->
 <div class="page-background"></div>
-<!-- 毛玻璃装饰光斑 -->
-<div class="orb orb-1"></div>
+<!-- 装饰光斑 -->
+<!-- <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
-<div class="orb orb-3"></div>
+<div class="orb orb-3"></div> -->
 <div class="layout-wrapper">
-  <!-- 左侧毛玻璃导航栏 -->
+  <!-- 左侧导航栏 -->
   <aside class="glass-sidebar">
     <!-- Logo 区域 -->
     <!-- <div class="sidebar-logo">
@@ -101,7 +101,7 @@ const handleCommand = (command) => {
   </aside>
   <!-- 右侧内容区 -->
   <div class="main-area">
-    <!-- 毛玻璃顶栏 -->
+    <!-- 顶栏 -->
     <header class="glass-header">
       <!-- 角色状态信息 -->
       <div class="header-status">

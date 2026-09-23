@@ -93,4 +93,15 @@ public class FriendRequestDto {
         }
         return senderUsername != null ? senderUsername : "未知用户";
     }
+
+    /**
+     * 列表显示用：displayName + @senderUsername（同名时也照常拼接）
+     */
+    public String getSenderDisplayNameWithAt() {
+        String name = getSenderDisplayName();
+        if (senderUsername != null && !senderUsername.isEmpty()) {
+            return name + "   @" + senderUsername;
+        }
+        return name;
+    }
 }

@@ -39,6 +39,8 @@ const activeFriend = computed<User | undefined>(() =>
  * 1. 进入页面：拉好友列表、连 WS、默认选第一个好友
  * ============================================================= */
 onMounted(async () => {
+  //测试
+  // console.log(loocation);
   // 好友列表加载已提到 App.vue 全局（登录后统一拉一次），这里直接复用
   await friendStore.loadFriends()
 
@@ -46,6 +48,8 @@ onMounted(async () => {
   if (friendStore.friends.length > 0 && activeFriendId.value == null) {
     await selectFriend(friendStore.friends[0].userid)
   }
+  //测试
+  // console.log(loocation);
 })
 
 /* =============================================================
@@ -219,14 +223,14 @@ const filteredFriends = computed<User[]>(() => {
           <div class="message-time"> {{ formatTime(m.createTime) }}
           </div>
         </div>
-        <div v-if="!loading && messages.length === 0" class="empty-msg"> 暂无消息，开始聊天吧 👋 </div>
+        <div v-if="!loading && messages.length === 0" class="empty-msg"> 暂无消息 </div>
       </main>
       <!-- 底部输入区 -->
       <footer class="message-input">
-        <div class="input-toolbar">
+        <!-- <div class="input-toolbar">
           <el-button text :icon="Picture">表情</el-button>
           <el-button text :icon="Microphone">图片</el-button>
-        </div>
+        </div> -->
         <el-input v-model="inputText" type="textarea" :rows="3" placeholder="输入消息..." resize="none" @keydown.enter.exact.prevent="sendMessage" />
         <div class="input-footer">
           <el-button type="primary" :icon="Promotion" :disabled="!inputText.trim()" @click="sendMessage"> 发送 </el-button>

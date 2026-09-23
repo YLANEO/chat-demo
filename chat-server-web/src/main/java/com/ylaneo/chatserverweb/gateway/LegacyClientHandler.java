@@ -102,13 +102,7 @@ public class LegacyClientHandler implements Runnable {
      * 因为 LegacyClientHandler 是在 LegacyTcpServer 里 new 出来的，
      * 走的是构造注入，没法直接拿 @Autowired 字段。
      */
-    public LegacyClientHandler(Socket socket,
-                               UserService userService,
-                               ContactService contactService,
-                               MessageService messageService,
-                               LegacyRequestParser parser,
-                               LegacyResponseBuilder responseBuilder,
-                               LegacyPushNotifier pushNotifier) {
+    public LegacyClientHandler(Socket socket, UserService userService, ContactService contactService, MessageService messageService, LegacyRequestParser parser, LegacyResponseBuilder responseBuilder, LegacyPushNotifier pushNotifier) {
         this.socket = socket;
         this.userService = userService;
         this.contactService = contactService;
@@ -118,9 +112,11 @@ public class LegacyClientHandler implements Runnable {
         this.pushNotifier = pushNotifier;
     }
 
+    //启动这个线程之后会自动运行这个run方法
     @Override
     public void run() {
         try {
+            //自动调用对应的接口
             dispatch();
         } catch (IOException e) {
             System.out.println("[LegacyClient] IO 异常: " + e.getMessage());
@@ -165,18 +161,18 @@ public class LegacyClientHandler implements Runnable {
 
     /**
      * 路由：根据请求前缀决定调哪个service。
-     * 路径上与 ServerThread.dispatch 完全对应。
+     * 路径上与ServerThread.dispatch完全对应。
      */
     private String route(String request) {
         String response;
 
         try {
-            // UserServiceImpl 对应的一组
+            //UserServiceImpl对应的一组
             if (request.startsWith("<login>")) {
                 List<String> p = parser.handleParams(request);
                 String username = p.get(1);
                 String password = p.get(2);
-                // 改成 Result<User>，让 buildLogin 走 4 字段分支，桌面端才能拿到 userId
+                // 改成Result<User>，让buildLogin走4字段分支，桌面端才能拿到userId
                 Result<User> r = userService.login(username, password);
                 response = responseBuilder.buildLogin(r);
 
@@ -227,7 +223,7 @@ public class LegacyClientHandler implements Runnable {
                 response = responseBuilder.buildGetUserData(r);
 
             }
-            // ContactServiceImpl 对应的一组
+            //ContactServiceImpl对应的一组
             else if (request.startsWith("<getFriendList>")) {
                 List<String> p = parser.handleParams(request);
                 Integer currentUserId = Integer.valueOf(p.get(1));
@@ -286,7 +282,7 @@ public class LegacyClientHandler implements Runnable {
                 response = responseBuilder.buildGetFriendIds(r);
 
             }
-            // MessageServiceImpl 对应的一组
+            //MessageServiceImpl对应的一组
             else if (request.startsWith("<getAllMessage>")) {
                 List<String> p = parser.handleParams(request);
                 Integer userId = Integer.valueOf(p.get(1));
@@ -312,19 +308,19 @@ public class LegacyClientHandler implements Runnable {
                 response = responseBuilder.buildFindMessageById(r);
 
             }
-            // 长连接分支：<registerPushSocket>
+            //长连接分支：<registerPushSocket>
             else if (request.startsWith("<registerPushSocket>")) {
                 List<String> p = parser.handleParams(request);
                 Integer userId = Integer.valueOf(p.get(1));
 
-                // 与原 ServerThread 行为一致：
-                //   1. 注册到 pushNotifier
+                //与原ServerThread基本行为一致：
+                //   1. 注册到pushNotifier
                 //   2. 启动独立心跳线程
                 //   3. 不返回响应，让连接保持打开
                 // 上线通知：通知所有好友该用户已上线
                 userService.markUserOnlineAndNotify(userId);
 
-                // 注册到 pushNotifier + 启动心跳线程
+                // 注册到pushNotifier并启动心跳线程
                 pushNotifier.registerPush(userId, socket);
                 new HeartbeatHandler(socket, userId, pushNotifier).start();
                 return null;  // dispatch() 检测到 response 为 null 不会写响应

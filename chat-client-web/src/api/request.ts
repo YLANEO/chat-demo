@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/userStore'//useUserStore是自定义的�
 import { useRouter, useRoute } from 'vue-router'
 
 // 创建一个路由器实例
-const router = useRouter();
+// const router = useRouter();
 
 
 
@@ -67,7 +67,7 @@ axiosInstance.interceptors.response.use(
       //   userStore.clearUser()//清store+sessionStorage；App.vue的watch会自动stopWs()
       //   ElMessage.error(data?.message || '登录已过期，请重新登录')
       //   // 用硬刷而不是router.push：避免axios拦截器里使用路由实例的潜在时序问题，
-      //   // 同时保证受保护页面彻底卸载（不留幽灵 WS / 缓存状态）
+      //   // 同时保证受保护页面彻底卸载（不留幽灵WS/缓存状态）
       //   setTimeout(() => {
       //     window.location.href = '/login'
       //   }, 1500)   // 等 1.5 秒，提示框有足够时间显示
