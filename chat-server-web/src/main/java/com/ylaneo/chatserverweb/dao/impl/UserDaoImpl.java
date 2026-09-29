@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 @Repository//这个注解表示：交给Spring管理，JdbcTemplate自动注入
 public class UserDaoImpl implements UserDao {
@@ -82,7 +83,7 @@ public class UserDaoImpl implements UserDao {
             if (!user.getPassword().equals(password)) {
                 return Result.error("密码错误");
             }
-            System.out.println("登录成功: userId=" + user.getUserid());
+            System.out.println("数据库处理登录请求DAO层。登录成功: userId=" + user.getUserid()+"时间： "+ LocalDateTime.now());
             return Result.success(user);
         } catch (EmptyResultDataAccessException e) {
             return Result.error("用户不存在");

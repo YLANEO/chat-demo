@@ -131,7 +131,7 @@ public class ServerThread extends Thread {
             //建立长连接的同时，启动独立线程处理该连接的心跳。注意：每个在线用户都需要一个这个线程，可能有点浪费服务端资源？
             new HeartbeatHandler(socket, userId).start();
 
-            return;  // 不发送响应，不关闭连接，线程自己管理
+            return;// 不发送响应，不关闭连接，线程自己管理
         } else {//其他情况
 //            response="<1><非法请求>";
             response = "<1>" + "<未知命令: " + request.substring(0, Math.min(20, request.length())) + ">";

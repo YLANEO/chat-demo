@@ -40,6 +40,7 @@ public class UserManager {
         String request = "<login>" + "<" + username + ">" + "<" + password + ">";
         try {
             String response = TcpClient.getInstance().sendRequest(request);
+            //解析返回的数据
             ProtocolUtil.ParsedResponse pr = ProtocolUtil.parseResponse(response);
             if (!pr.isSuccess()) {
                 throw new RuntimeException(pr.message);
@@ -85,7 +86,7 @@ public class UserManager {
         try {
             TcpClient.getInstance().sendRequest(request);
         } catch (IOException e) {
-            // 状态更新失败不抛异常
+            throw new RuntimeException("状态更新异常: " + e.getMessage(), e);
         }
     }
 

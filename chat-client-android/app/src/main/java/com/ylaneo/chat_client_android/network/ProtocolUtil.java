@@ -41,6 +41,7 @@ public class ProtocolUtil {
             // 实际上每个段都只有一个结尾 '>'，因为 '<' 已经是分隔符了
             String trimmed = part;
             if (trimmed.endsWith(">")) {
+                //只选取有效部分
                 trimmed = trimmed.substring(0, trimmed.length() - 1);
             }
             result.add(trimmed);

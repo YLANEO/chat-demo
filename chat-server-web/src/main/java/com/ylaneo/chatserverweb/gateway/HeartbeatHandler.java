@@ -7,25 +7,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.time.LocalDateTime;
 
-/**
- * swing 客户端长连接的心跳监测线程。
- *
- * 来源（迁移说明）：
- *   从 chat-server/src/main/java/com/ylaneo/chatserver/handler/HeartbeatHandler.java
- *   完整搬过来，差异只有两处：
- *     1. 不再依赖 chat-server/socket/Server.java
- *     2. 改用 LegacyPushNotifier 提供的方法：
- *        - unregisterPush 代替 Server.removeUser
- *        - handleDisconnect 代替 Server.userDisconnected
- *        （handleDisconnect 内部会 unregisterPush + 调
- *         UserService.markUserOfflineAndNotify 让好友知道下线）
- *
- * 协议：
- *   - 客户端发 "ping" -> 服务端回 "pong"（接续连接）
- *   - 客户端发 "close" -> 服务端退出循环，主动关连接
- *   - 超时（35 秒无消息）-> 服务端主动发 "ping" 探测
- */
+
 public class HeartbeatHandler extends Thread {
 
     @Autowired
@@ -33,7 +17,7 @@ public class HeartbeatHandler extends Thread {
 
     private final Socket socket;
     private final Integer userId;
-    private volatile boolean running = true;
+    private boolean running = true;
     private InputStream is;
     private OutputStream os;
 
@@ -63,13 +47,13 @@ public class HeartbeatHandler extends Thread {
                     }
 
                     String msg = new String(buffer, 0, len).trim();
-
+                    //如果收到桌面端的ping消息
                     if ("ping".equals(msg)) {
-                        System.out.println("[Heartbeat] 收到客户端心跳 userId=" + userId);
+                        System.out.println("[Heartbeat] 收到客户端心跳 userId=" + userId +"时间: "+ LocalDateTime.now());
                         os.write("pong".getBytes());
                         os.flush();
                     } else if ("close".equals(msg)) {
-                        System.out.println("[Heartbeat] 收到客户端关闭 userId=" + userId);
+                        System.out.println("[Heartbeat] 收到客户端关闭 userId=" + userId+"时间: "+ LocalDateTime.now());
                         running = false;
                     }
                     // 其他消息这里忽略：聊天/消息推送都已经由 LegacyPushNotifier 处理
@@ -90,7 +74,16 @@ public class HeartbeatHandler extends Thread {
             // 连接异常，直接退出循环
         } finally {
             System.out.println("[Heartbeat] 结束 userId=" + userId);
-            closeQuietly(socket);
+            //closeQuietly(socket);
+            if(socket!=null){
+                try{
+                    //将socket长连接关闭。
+                    socket.close();
+                } catch (IOException e) {
+                    System.out.println("桌面端socket长连接关闭失败");
+                    throw new RuntimeException(e);
+                }
+            }
             // 关键：从注册表里移除并广播下线
             if (pushNotifier != null) {
                 pushNotifier.handleDisconnect(userId);
@@ -98,10 +91,11 @@ public class HeartbeatHandler extends Thread {
         }
     }
 
-    private void closeQuietly(Socket s) {
-        if (s != null) {
+    //关闭socket连接的函数
+    private void closeQuietly(Socket socket ) {
+        if (socket != null) {
             try {
-                s.close();
+                socket.close();
             } catch (IOException ignored) {
             }
         }

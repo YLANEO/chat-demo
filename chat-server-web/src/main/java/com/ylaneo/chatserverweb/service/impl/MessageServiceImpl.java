@@ -31,12 +31,8 @@ public class MessageServiceImpl implements MessageService {
     public Result<List<ChatMessage>> getAllMessage(Integer userId, Integer friendId) {
         return messageDao.getAllMessage(userId, friendId);
     }
-    /**
-     * 发送消息：
-     *   1. 落库
-     *   2. 推 WebSocket + swing 通知接收方（receiver）
-     *   3. 推 WebSocket + swing 通知发送方（sender）：多端同步，sender 的其他设备也能收到这条消息
-     */
+
+    //推 WebSocket + swing 通知接收方（receiver）。推 WebSocket + swing 通知发送方（sender）：多端同步，sender 的其他设备也能收到这条消息
     @Override
     public Result<ChatMessage> sendMessage(Integer senderId, Integer receiverId, Integer type, String content, Integer status) {
         Result<ChatMessage> result = messageDao.sendMessage(senderId, receiverId, type, content, status);
@@ -72,20 +68,16 @@ public class MessageServiceImpl implements MessageService {
         return messageDao.getHistoryMessage(userId, friendId, lastMessageId, limit);
     }
 
-    /**
-     * 标记已读：
-     *   1. 批量更新数据库
-     *   2. 推WebSocket告诉对方"你的消息已被对方读了"
-     */
+    //标记已读
     @Override
     public Result<Integer> markAsRead(Integer userId, Integer friendId) {
         Result<Integer> result = messageDao.markAsRead(userId, friendId);
         if (result.getCode() == 0) {
             WebSocketMessage ws = new WebSocketMessage();
             ws.setType("read");
-            ws.setSenderId(userId);      // 我自己
-            ws.setReceiverId(friendId);  // 对面那位
-            ws.setData(result.getData()); // 读了几条
+            ws.setSenderId(userId);
+            ws.setReceiverId(friendId);
+            ws.setData(result.getData());//读了几条
             webSocketHandler.pushToUser(friendId, ws);
         }
         return result;

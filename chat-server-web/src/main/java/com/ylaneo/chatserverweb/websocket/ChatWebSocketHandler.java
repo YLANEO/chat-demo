@@ -21,28 +21,17 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
 
     private ApplicationContext applicationContext;
 
-    // 懒取 UserService，打破与 UserServiceImpl 的构造期循环依赖
+    // 懒取UserService，打破与UserServiceImpl的构造期循环依赖
     private UserService getUserService() {
         return applicationContext.getBean(UserService.class);
     }
 
-    /**
-     * onlineUsers 的作用和 chat-server 项目中的 Server.onlineUsers 完全一样
-     * key: userId（登录用户的 ID）
-     * value: WebSocketSession（该用户的 WebSocket 连接）
-     *
-     * 为什么要用 Map 而不是 List？
-     * 因为推送消息时需要"找到指定用户的连接"，O(1) 查找
-     * ConcurrentHashMap 保证多线程安全，多个请求同时推送消息时不会出问题
-     */
+    //用哈希表存用户id与对应的websocket连接
     private final Map<Integer, WebSocketSession> onlineUsers = new ConcurrentHashMap<>();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * 客户端连接建立成功时调用
-     * 类似 Server.registerUser(userId, socket)
-     */
+    //客户端连接建立成功时调用
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         // 从session中取出userId（登录时存入的，详见登录接口）
@@ -55,10 +44,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         }
     }
 
-    /**
-     * 收到客户端发来的文本消息时调用
-     * 类似 ServerThread.run() 里的 request 处理逻辑
-     */
+    //收到客户端发来的文本消息时调用
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
@@ -76,10 +62,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         }
     }
 
-    /**
-     * 连接关闭时调用
-     * 类似 Server.userDisconnected(userId)
-     */
+    //连接关闭时调用
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         Integer userId = getUserIdFromSession(session);
@@ -91,9 +74,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         }
     }
 
-    /**
-     * 发生错误时调用
-     */
+    //发生错误时调用
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         System.out.println("WebSocket 传输错误: " + exception.getMessage());
@@ -103,16 +84,15 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         }
     }
 
-    /**
-     * ====================== 以下是给 Service 层调用的推送方法 ======================
-     * 这些方法不是 WebSocket 协议的一部分，而是我们在 Handler 里额外提供的
-     * Service 层调用这些方法，把消息推送给指定用户或广播
-     */
+    // ======================================== 以下是提供给Service层调用的推送方法 ========================================
 
-    /**
-     * 向指定用户推送消息
-     * 等同于原来 chat-server 中的 Server.pushStatusUpdate(userId, message)
-     */
+
+    /*这些方法不是 WebSocket 协议的一部分，而是我们在 Handler 里额外提供的
+    Service 层调用这些方法，把消息推送给指定用户或广播*/
+
+
+    /*向指定用户推送消息
+    等同于原来 chat-server 中的 Server.pushStatusUpdate(userId, message)*/
     public void pushToUser(Integer targetUserId, Object message) {
         WebSocketSession session = onlineUsers.get(targetUserId);
         if (session == null || !session.isOpen()) {
@@ -129,34 +109,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         }
     }
 
-    /**
-     * 向所有在线用户广播消息
-     */
-    public void broadcastToAll(Object message) {
-        String jsonMessage;
-        try {
-            jsonMessage = objectMapper.writeValueAsString(message);
-        } catch (Exception e) {
-            return;
-        }
-        for (Map.Entry<Integer, WebSocketSession> entry : onlineUsers.entrySet()) {
-            try {
-                if (entry.getValue().isOpen()) {
-                    entry.getValue().sendMessage(new TextMessage(jsonMessage));
-                }
-            } catch (IOException e) {
-                onlineUsers.remove(entry.getKey());
-            }
-        }
-    }
 
-    /**
-     * 向多个指定用户推送消息（用于状态变更广播给所有好友）
-     */
+    //向多个指定用户推送消息（用于状态变更广播给所有好友）
     public void pushToUsers(List<Integer> targetUserIds, Object message) {
         String jsonMessage;
         try {
             jsonMessage = objectMapper.writeValueAsString(message);
+            System.out.println("后端将map类型的数据转换成json格式后："+jsonMessage);
         } catch (Exception e) {
             return;
         }
@@ -172,7 +131,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         }
     }
 
-    // ====================== 辅助方法 ======================
+    // ====================== 其他方法 ======================
 
     /**
      * 从WebSocketSession中取出userId
@@ -191,10 +150,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler implements Applic
         return null;
     }
 
-    // Getter，供外部查询在线状态
-    public Map<Integer, WebSocketSession> getOnlineUsers() {
-        return onlineUsers;
-    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {

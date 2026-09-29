@@ -10,10 +10,26 @@ import org.springframework.stereotype.Repository;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Repository
 public class MessageDaoImpl implements MessageDao {
+    //
+    // 抽出公共的字段映射
+    private ChatMessage messageRowMapper(ResultSet rs) throws SQLException {
+        ChatMessage m = new ChatMessage();
+        m.setChatMessageId(rs.getInt("id"));
+        m.setSenderId(rs.getInt("sender_id"));
+        m.setReceiverId(rs.getInt("receiver_id"));
+        m.setType(rs.getInt("type"));
+        m.setContent(rs.getString("content"));
+        m.setReadAt(rs.getObject("read_at", LocalDateTime.class));
+        m.setStatus(rs.getInt("status"));
+        m.setCreateTime(rs.getObject("create_time", LocalDateTime.class));
+        m.setUpdateTime(rs.getObject("update_time", LocalDateTime.class));
+        return m;
+    }
     //
     @Override
     public Result<List<ChatMessage>> getAllMessage(Integer userId, Integer friendId) {
@@ -149,9 +165,9 @@ public class MessageDaoImpl implements MessageDao {
             pt.setInt(idx, limit != null && limit > 0 ? limit : 20);
             ResultSet rs = pt.executeQuery();
             List<ChatMessage> list = new ArrayList<>();
-            while (rs.next()) list.add(mapRow(rs));
+            while (rs.next()) list.add(messageRowMapper(rs));
             // 倒序转正序，便于前端展示
-            java.util.Collections.reverse(list);
+            Collections.reverse(list);
             return Result.success(list);
         } catch (SQLException e) {
             return Result.error("数据库操作错误:" + e.getMessage());
@@ -205,18 +221,5 @@ public class MessageDaoImpl implements MessageDao {
             return Result.error("数据库操作错误:" + e.getMessage());
         }
     }
-    // 抽出公共的字段映射
-    private ChatMessage mapRow(ResultSet rs) throws SQLException {
-        ChatMessage m = new ChatMessage();
-        m.setChatMessageId(rs.getInt("id"));
-        m.setSenderId(rs.getInt("sender_id"));
-        m.setReceiverId(rs.getInt("receiver_id"));
-        m.setType(rs.getInt("type"));
-        m.setContent(rs.getString("content"));
-        m.setReadAt(rs.getObject("read_at", LocalDateTime.class));
-        m.setStatus(rs.getInt("status"));
-        m.setCreateTime(rs.getObject("create_time", LocalDateTime.class));
-        m.setUpdateTime(rs.getObject("update_time", LocalDateTime.class));
-        return m;
-    }
+
 }

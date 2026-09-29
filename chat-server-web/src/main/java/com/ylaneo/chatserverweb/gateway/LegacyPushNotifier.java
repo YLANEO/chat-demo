@@ -13,37 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 统一管理 swing 客户端的长连接 socket，并提供"双向推送"能力。
- *
- * 背景：
- *   原来的 chat-server 用 Server.onlineUsers (Map<Integer,Socket>)保存swing长连接，
- *   并通过 Server.pushStatusUpdate(userId, message) 写字节流。
- *   现在合并进 chat-server-web 之后，两类客户端会同时存在：
- *     - Web 客户端：通过 ChatWebSocketHandler 推送（JSON）
- *     - Swing 客户端：通过这里的 legacyOnlineUsers 推送（尖括号字符串）
- *
- *   这个类的核心职责：
- *     1. 维护 legacyOnlineUsers (swing 长连接注册表)
- *     2. 提供 pushTo / pushToUsers 方法，同时通知 Web 端和 Swing 端
- *     3. 提供 registerPush / unregisterPush，配合 HeartbeatHandler 处理用户上下线
- *
- * 依赖关系：
- *   - 被 LegacyClientHandler 调用 (registerPush)
- *   - 被 HeartbeatHandler 调用 (unregisterPush)
- *   - 被各 ServiceImpl 调用 (pushToUsers / pushTo)，用于状态/好友/消息推送时双向通知
- */
+//需要将两端的统一到这里
+//统一管理swing客户端的长连接socket，并提供"双向推送"能力。
 @Component
 public class LegacyPushNotifier {
 
-    /**
-     * swing 长连接注册表。
-     * key: userId
-     * value: 与该 swing 客户端保持长连接的 Socket
-     *
-     * 对应原代码：
-     *   chat-server/socket/Server.java 的 public static Map<Integer,Socket>onlineUsers
-     */
+
     private final Map<Integer, Socket> legacyOnlineUsers = new ConcurrentHashMap<>();
 
     @Autowired
@@ -52,67 +27,37 @@ public class LegacyPushNotifier {
     @Autowired
     private UserService userService;
 
-    // 注册/注销swing长连接（长连接分支）
+    //注册/注销swing长连接（长连接分支）
 
-    /**
-     * 注册一个swing客户端的长连接socket。
-     * 对应 ServerThread.dispatch()里的Server.registerUser(userId, socket)
-     */
+    //注册一个swing客户端的长连接socket。对应ServerThread.dispatch()里的Server.registerUser(userId,socket)
     public void registerPush(Integer userId, Socket socket) {
         legacyOnlineUsers.put(userId, socket);
         System.out.println("[Legacy] swing 长连接已注册: userId=" + userId);
     }
 
-    /**
-     * 注销 swing 长连接。
-     * 对应 HeartbeatHandler finally 块里的 Server.removeUser(userId)。
-     */
+    //注销swing长连接。对应HeartbeatHandler finally块里的Server.removeUser(userId)。
     public void unregisterPush(Integer userId) {
         Socket removed = legacyOnlineUsers.remove(userId);
         if (removed != null) {
             System.out.println("[Legacy] swing 长连接已注销: userId=" + userId);
+        }else {
+            System.out.println("[Legacy] swing 长连接注销失败: userId=" + userId);
         }
     }
 
-    /**
-     * swing长连接断开时的副作用：
-     *   1. 把用户状态置为离线
-     *   2. 通知好友该用户下线
-     * 对应 Server.userDisconnected -> markUserOfflineAndNotify。
-     */
+    //swing长连接断开操作：1.把用户状态置为离线2.通知好友该用户下线
     public void handleDisconnect(Integer userId) {
         unregisterPush(userId);
         // 这里直接复用 web 版 UserService 已有的方法
         userService.markUserOfflineAndNotify(userId);
     }
 
-    // ============================================================
     // 推送：给单个用户
-    // ============================================================
-
-    /**
-     * 给单个用户推送消息，同时尝试 web 端和 swing 端。
-     *
-     * @param userId       目标用户 ID
-     * @param legacyMessage 已经是尖括号格式的消息字符串，例如
-     *                      "<push><statusUpdate><1><0>"
-     *                      或者 "<push><messageAdd><2><123>"
-     *                      同一个字符串会发给 swing；对 web 端同时推送一个最小 JSON 镜像。
-     *
-     * 这里只关心"推 swing"；web 端的推送调用方一般会另外做（保持现有 WebSocket 推送不变）。
-     * 但为了方便，方法签名同时接受 legacy 字符串和可选的 webJsonContent。
-     */
     public void pushTo(Integer userId, String legacyMessage) {
         pushTo(userId, legacyMessage, null);
     }
 
-    /**
-     * 给单个用户推送消息，同时通知 web 端和 swing 端。
-     *
-     * @param userId         目标用户 ID
-     * @param legacyMessage  swing 端的尖括号字符串
-     * @param webJsonContent 可选：发往 web 端的内容（任意对象，会被 ChatWebSocketHandler 序列化为 JSON）
-     */
+     //给单个用户推送消息，同时通知 web 端和 swing 端。
     public void pushTo(Integer userId, String legacyMessage, Object webJsonContent) {
         // 1) WebSocket 推送（web 端）
         if (webJsonContent != null) {
@@ -142,10 +87,7 @@ public class LegacyPushNotifier {
 
     // 推送：给多个用户（用于状态更新广播等场景）
 
-    /**
-     * 给一组用户推送同一条swing消息。
-     * webJsonContent是可选的：若提供，则同时给每个user推web端消息（避免重复序列化）。
-     */
+
     public void pushToUsers(List<Integer> userIds, String legacyMessage, Object webJsonContent) {
         if (userIds == null || userIds.isEmpty()) {
             return;
@@ -178,20 +120,16 @@ public class LegacyPushNotifier {
         }
     }
 
-    /**
-     * 仅给swing端批量推送（兼容原本只推 swing 的场景）。
-     */
+
     public void pushToUsers(List<Integer> userIds, String legacyMessage) {
         pushToUsers(userIds, legacyMessage, null);
     }
 
     // 工具方法：构造web端的JSON
 
-    /**
-     * 用于构造 web 端的 statusUpdate 推送内容，与 swing 端的 <push><statusUpdate> 对应。
-     * 因为 web 端的推送内容结构是 Map<String,Object>，为了复用 ChatWebSocketHandler.pushToUsers，
-     * 这里工具方法集中一下，避免各 Service 各自造。
-     */
+    /*用于构造 web 端的 statusUpdate 推送内容，与 swing 端的 <push><statusUpdate> 对应。
+    因为 web 端的推送内容结构是 Map<String,Object>，为了复用 ChatWebSocketHandler.pushToUsers，
+    这里工具方法集中一下，避免各 Service 各自造。*/
     public static Map<String, Object> buildWebStatusUpdate(Integer userId, Integer status) {
         Map<String, Object> msg = new HashMap<>();
         msg.put("type", "statusUpdate");
@@ -200,9 +138,7 @@ public class LegacyPushNotifier {
         return msg;
     }
 
-    /**
-     * 用于构造 web 端的 messageAdd 推送内容。
-     */
+    //构造web端的messageAdd推送内容。
     public static Map<String, Object> buildWebMessageAdd(Integer senderId, Integer messageId) {
         Map<String, Object> msg = new HashMap<>();
         msg.put("type", "messageAdd");

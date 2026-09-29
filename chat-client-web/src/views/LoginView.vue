@@ -48,6 +48,8 @@ async function handleLogin(): Promise<void> {
   //try/catch包裹一层
   try {
     //调用接口获取token
+    console.log('web端发起登录请求  时间： ' + new Date());
+
     const token = await loginService({ username: form.value.username, password: form.value.password, })
     //将token信息使用pinia进行状态管理
     userStore.setUser({ token })

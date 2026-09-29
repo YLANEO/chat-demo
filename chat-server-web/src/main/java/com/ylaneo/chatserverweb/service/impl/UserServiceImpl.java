@@ -110,6 +110,7 @@ public class UserServiceImpl implements UserService, ApplicationContextAware {
         }
         // web 端推送（JSON）
         Map<String, Object> webMessage = LegacyPushNotifier.buildWebStatusUpdate(userId, status);
+        System.out.println("后端构造的map类型的 状态更新数据："+webMessage);
         ChatWebSocketHandler webSocketHandler = applicationContext.getBean(ChatWebSocketHandler.class);
         webSocketHandler.pushToUsers(friendIdsResult.getData(), webMessage);
         // swing 端推送（尖括号字符串）—— 随用随取

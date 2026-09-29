@@ -62,7 +62,7 @@ export const useMessageStore = defineStore('message', () => {
     if (friendId != null) unreadMap.value[friendId] = 0
   }
 
-  // —— 发送消息：等 HTTP 回来拿到真实消息后入列表，简单可靠
+  //发送消息：等HTTP请求回来拿到真实消息后入列表，简单可靠
   async function sendMessage(friendId: number, content: string) {
     const saved = await sendMessageService(friendId, 0, content)
     upsert(saved)
@@ -76,7 +76,7 @@ export const useMessageStore = defineStore('message', () => {
     unreadMap.value[friendId] = 0
   }
 
-  // 工具：拿到当前登录用户的 id
+  // 工具：拿到当前登录用户的id
   function currentUid(): number {
     const userStore = useUserStore()
     return userStore.userId ?? 0

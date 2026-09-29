@@ -29,6 +29,7 @@ public class TcpClient {
     private final String host;
     private final int port;
 
+    //指定ip地址和要访问的后端端口号。
     private TcpClient() {
         // 真机/模拟器通过局域网 IP 访问本机后端
         // this.host = "10.0.2.2"; // 仅 Android 模拟器访问宿主机

@@ -2,6 +2,7 @@ package com.ylaneo.chatclientdesktop.net;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDateTime;
 
 //心跳机制线程，running为false时就结束该线程
 public class HeartbeatSender extends Thread {
@@ -26,7 +27,7 @@ public class HeartbeatSender extends Thread {
 
                 socket.getOutputStream().write("ping".getBytes());//发送心跳，
                 socket.getOutputStream().flush();
-                System.out.println("向服务端发送心跳：ping ");
+                System.out.println("向服务端发送心跳：ping "+"时间: "+ LocalDateTime.now());
             } catch (InterruptedException e) {
                 break;
             } catch (IOException e) {

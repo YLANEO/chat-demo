@@ -54,6 +54,7 @@ public class FriendsFragment extends Fragment implements PushListener.PushCallba
         super.onViewCreated(view, savedInstanceState);
         rvFriends = view.findViewById(R.id.rv_friends);
         tvEmpty = view.findViewById(R.id.tv_empty);
+        //找到刷新好友按键
         btnFriendRequests = view.findViewById(R.id.btn_friend_requests);
         btnRefresh = view.findViewById(R.id.btn_refresh_friends);
 

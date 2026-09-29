@@ -33,11 +33,13 @@ public class LoginInterceptor implements HandlerInterceptor {
 */
         //获得令牌
         String token=request.getHeader("Authorization");
+        System.out.println("令牌token： "+token);
         //进行判断
         try
         {
             //解析令牌
             Map<String,Object> claims= JwtUtil.parseToken(token);
+            System.out.println("token解析成claims之后： "+claims);
             //将解析出来的数据（或者是一个对象）利用ThreadLocal进行存储
             ThreadLocalUtil.set(claims);
             //成功解析,放行

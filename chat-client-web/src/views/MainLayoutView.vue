@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
+import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Crop, EditPen, SwitchButton, House, ChatDotRound, Setting } from '@element-plus/icons-vue'
+import { User, SwitchButton, ChatDotRound } from '@element-plus/icons-vue'
 
 const userInfoStore = useUserStore()
 // 创建一个实例
@@ -48,10 +48,6 @@ const handleCommand = (command) => {
 </script>
 <template><!-- 全屏背景层 -->
 <div class="page-background"></div>
-<!-- 装饰光斑 -->
-<!-- <div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-<div class="orb orb-3"></div> -->
 <div class="layout-wrapper">
   <!-- 左侧导航栏 -->
   <aside class="glass-sidebar">
@@ -60,7 +56,7 @@ const handleCommand = (command) => {
             <img src="@/assets/hi.png" alt="logo" class="logo-img" />
         </div> -->
     <!-- 导航菜单 -->
-    <el-menu active-text-color="var(--theme-accent)" text-color="var(--theme-text)" :default-active="route.path" class="glass-menu"  router>
+    <el-menu active-text-color="var(--theme-accent)" text-color="var(--theme-text)" :default-active="route.path" class="glass-menu" router>
       <!-- 聊天页面 -->
       <el-menu-item index="/main/chat">
         <el-icon>
@@ -76,13 +72,12 @@ const handleCommand = (command) => {
         <span>好友</span>
       </el-menu-item>
       <!--  -->
-      <el-menu-item index="/main/profile">
+      <!-- <el-menu-item index="/main/profile">
         <el-icon>
           <Setting />
         </el-icon>
         <span>个人信息 </span>
-        <!-- <divided/> -->
-      </el-menu-item>
+      </el-menu-item> -->
       <!--  -->
       <!-- <el-menu-item index="/main/home">
         <el-icon>
@@ -106,7 +101,7 @@ const handleCommand = (command) => {
       <!-- 角色状态信息 -->
       <div class="header-status">
         <div class="status-chip role-chip">
-          <span class="chip-dot"></span>
+          <!-- <span class="chip-dot"></span> -->
           <span class="chip-label">用户</span>
           <span class="chip-value">{{ userInfoStore.nickname ? userInfoStore.nickname : userInfoStore.username }}</span>
         </div>
@@ -121,9 +116,9 @@ const handleCommand = (command) => {
         </div>
         <template #dropdown>
           <el-dropdown-menu class="glass-dropdown">
-            <el-dropdown-item command="info" :icon="User">个人信息</el-dropdown-item>
+            <!-- <el-dropdown-item command="info" :icon="User">个人信息</el-dropdown-item>
             <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>
-            <el-dropdown-item command="resetPassword" :icon="EditPen">重置密码</el-dropdown-item>
+            <el-dropdown-item command="resetPassword" :icon="EditPen">重置密码</el-dropdown-item> -->
             <el-dropdown-item command="logout" :icon="SwitchButton" divided>退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -136,10 +131,6 @@ const handleCommand = (command) => {
         <RouterView />
       </div>
     </main>
-    <!-- 底栏 -->
-    <!-- <footer class="glass-footer">
-            <span class="footer-text">chat-demo ©2026 Created by YLANEO</span>
-        </footer> -->
   </div>
 </div>
 </template>
@@ -155,92 +146,6 @@ const handleCommand = (command) => {
   background: var(--theme-body-bg);
   z-index: -3;
   transition: background 0.6s ease;
-}
-
-/* ============================
-  装饰性光斑
-   ============================ */
-.orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(80px);
-  z-index: -2;
-  pointer-events: none;
-  transition: background 0.6s ease;
-}
-
-.orb-1 {
-  width: 500px;
-  height: 500px;
-  top: -150px;
-  left: -100px;
-  background: radial-gradient(circle, var(--theme-primary) 0%, transparent 70%);
-  opacity: 0.35;
-  animation: orbFloat1 18s ease-in-out infinite;
-}
-
-.orb-2 {
-  width: 400px;
-  height: 400px;
-  bottom: -100px;
-  right: 10%;
-  background: radial-gradient(circle, var(--theme-accent) 0%, transparent 70%);
-  opacity: 0.2;
-  animation: orbFloat2 22s ease-in-out infinite;
-}
-
-.orb-3 {
-  width: 300px;
-  height: 300px;
-  top: 40%;
-  left: 30%;
-  background: radial-gradient(circle, var(--theme-primary) 0%, transparent 70%);
-  opacity: 0.15;
-  animation: orbFloat3 15s ease-in-out infinite;
-}
-
-@keyframes orbFloat1 {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  33% {
-    transform: translate(60px, 40px) scale(1.1);
-  }
-
-  66% {
-    transform: translate(-30px, 60px) scale(0.95);
-  }
-}
-
-@keyframes orbFloat2 {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  40% {
-    transform: translate(-80px, -50px) scale(1.15);
-  }
-
-  70% {
-    transform: translate(40px, -30px) scale(0.9);
-  }
-}
-
-@keyframes orbFloat3 {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate(50px, -60px) scale(1.2);
-  }
 }
 
 /* ============================
@@ -426,11 +331,11 @@ const handleCommand = (command) => {
 .chip-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: 5px;
   background: var(--theme-accent);
-  box-shadow: 0 0 6px var(--theme-accent);
+  // box-shadow: 0 0 6px var(--theme-accent);
   flex-shrink: 0;
-  animation: pulse 2s ease-in-out infinite;
+  // animation: pulse 2s ease-in-out infinite
 }
 
 .status-online .chip-dot {
@@ -456,7 +361,7 @@ const handleCommand = (command) => {
   font-weight: 600;
 }
 
-/* 毛玻璃按钮 */
+/* 按钮 */
 .glass-btn {
   background: var(--theme-btn-bg) !important;
   border: 1px solid var(--theme-border) !important;
@@ -590,44 +495,5 @@ const handleCommand = (command) => {
   padding: 0px;
   transition: background 0.6s ease, border-color 0.6s ease;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-}
-
-/* ============================
-  毛玻璃底栏
-   ============================ */
-.glass-footer {
-  height: 48px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--theme-footer-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--theme-border);
-  transition: background 0.6s ease, border-color 0.6s ease;
-}
-
-.footer-text {
-  font-size: 13px;
-  color: var(--theme-text-muted);
-  letter-spacing: 0.5px;
-}
-
-/* ============================
-  动画
-   ============================ */
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.6;
-    transform: scale(0.85);
-  }
 }
 </style>

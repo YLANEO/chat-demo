@@ -19,19 +19,19 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 1. 注册拦截器
-        // 在原来的排除路径基础上，新增了 "/uploads/**"，防止访问图片时报 401 错误
+        // 拦截器
+        // 在原来的排除路径基础上，新增了"/uploads/**"，防止访问静态图片资源时报401错误
         registry.addInterceptor(loginInterceptor)
                 //放行前端发送来的下面的路径的访问请求，其他路径的访问请求都要经过注入的loginInterceptors拦截器处理
-                .excludePathPatterns("/user/register", "/user/login", "/uploads/**");
+                .excludePathPatterns("/user/register","/user/login","/uploads/**");
     }
 
     //注意这里有一个重写，就是把WebMvcConfigurer里面本来有的方法进行...了。定义了资源处理器的路径？然后配置了资源的访问路径？
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 2. 静态资源映射
-        // 配置虚拟路径：当浏览器访问 http://localhost:8080/uploads/xxx 时
-        // 实际上是去你桌面的物理文件夹 C:/Users/gin/Desktop/spring_flies/ 找图
+        // 静态资源映射
+        // 配置虚拟路径：当浏览器访问http://localhost:8080/uploads/xxx时
+        // 映射到，实际上是访问桌面的物理文件夹C:/Users/gin/Desktop/spring_flies/，在文件夹中去匹配文件名。
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:D:/files_D/avatar_chat_demo");
     }

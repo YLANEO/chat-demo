@@ -44,6 +44,7 @@ function onWsStatusUpdate(msg: any) {
   friendStore.loadFriends()
 }
 
+// websocket.ts中的handler通过字符串映射函数就是在这里设置的。
 function startWs() {
   chatSocket.on('chat', onWsChat)
   chatSocket.on('read', onWsRead)
@@ -58,8 +59,9 @@ function stopWs() {
   chatSocket.disconnect()
 }
 
+// 监听userStore.userId的变化，如果变化了，则调用startWs或者stopWs
 onMounted(() => {
-  // 登录后 userStore.userId 才有值，监听它来 connect / disconnect
+  // 登录后 userStore.userId 才有值，监听它来 connect或者disconnect
   watch(
     () => userStore.userId,
     async (uid, oldUid) => {
@@ -76,6 +78,7 @@ onMounted(() => {
   )
 })
 
+// 组件卸载时调用stopWs
 onBeforeUnmount(() => {
   stopWs()
 })
