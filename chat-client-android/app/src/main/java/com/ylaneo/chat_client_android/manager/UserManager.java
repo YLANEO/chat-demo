@@ -15,11 +15,13 @@ import java.util.List;
  */
 public class UserManager {
 
+    //使用volatile的原因是：需要线程间可见，并且不能
     private static volatile UserManager instance;
 
     private UserManager() {
     }
 
+    //双重检查锁，懒汉式单例
     public static UserManager getInstance() {
         if (instance == null) {
             synchronized (UserManager.class) {
@@ -37,22 +39,24 @@ public class UserManager {
      * @return 完整的 User 信息（包含 userid）
      */
     public User login(String username, String password) {
+        //手动拼接要发送的请求
         String request = "<login>" + "<" + username + ">" + "<" + password + ">";
         try {
+            //通过单例模式的TcpClient进行请求的发送和响应信息的获取
             String response = TcpClient.getInstance().sendRequest(request);
-            //解析返回的数据
+            //解析返回的数据，封装成ParsedResponse类对象
             ProtocolUtil.ParsedResponse pr = ProtocolUtil.parseResponse(response);
             if (!pr.isSuccess()) {
                 throw new RuntimeException(pr.message);
             }
             if (pr.data.isEmpty()) {
-                throw new RuntimeException("登录响应缺少用户 ID");
+                throw new RuntimeException("登录响应没有携带用户信息");
             }
             User user = new User();
             try {
                 user.setUserid(Integer.parseInt(pr.data.get(0)));
             } catch (NumberFormatException e) {
-                throw new RuntimeException("登录响应 userId 格式错误");
+                throw new RuntimeException("登录响应中的userId格式错误");
             }
             user.setUsername(username);
             user.setStatus(1); // 登录成功默认在线

@@ -34,6 +34,7 @@ public class LoginActivity extends AppCompatActivity {
     private MaterialButton btnGoRegister;
     private View progressLogin;
 
+    //持有Handler(Looper.getMainLooper())在任何地方切回主线程的通用手段,因为android中的UI不是线程安全的，处理ui变化需要使用主线程
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -45,6 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         initListeners();
     }
 
+    //初始化组件，为各个定义的变量绑定对应的组件（在layout中的）
     private void initViews() {
         etUsername = findViewById(R.id.et_username);
         etPassword = findViewById(R.id.et_password);
@@ -53,6 +55,7 @@ public class LoginActivity extends AppCompatActivity {
         progressLogin = findViewById(R.id.progress_login);
     }
 
+    //为按钮绑定对应的功能
     private void initListeners() {
         // 登录按钮
         btnLogin.setOnClickListener(v -> handleLogin());
@@ -63,7 +66,9 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    //登录按钮点击后的逻辑
     private void handleLogin() {
+        //判断为空？
         String username = etUsername.getText() != null ? etUsername.getText().toString().trim() : "";
         String password = etPassword.getText() != null ? etPassword.getText().toString() : "";
 
@@ -87,6 +92,7 @@ public class LoginActivity extends AppCompatActivity {
                 // 更新在线状态
                 UserManager.getInstance().updateUserStatus(user.getUserid(), 1);
 
+                //使用主线程处理UI变化，UI不是线程安全的
                 mainHandler.post(() -> {
                     setLoading(false);
                     Toast.makeText(this, "登录成功", Toast.LENGTH_SHORT).show();

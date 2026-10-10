@@ -17,7 +17,7 @@ public class HeartbeatHandler extends Thread {
 
     private final Socket socket;
     private final Integer userId;
-    private boolean running = true;
+    private boolean running = true;//
     private InputStream is;
     private OutputStream os;
 
@@ -39,6 +39,7 @@ public class HeartbeatHandler extends Thread {
                 socket.setSoTimeout(35000);
 
                 try {
+                    //这里会阻塞，直到有socket通道中有数据来。
                     int len = is.read(buffer);
 
                     if (len <= 0) {
@@ -51,12 +52,13 @@ public class HeartbeatHandler extends Thread {
                     if ("ping".equals(msg)) {
                         System.out.println("[Heartbeat] 收到客户端心跳 userId=" + userId +"时间: "+ LocalDateTime.now());
                         os.write("pong".getBytes());
+                        System.out.println("[Heartbeat] 向客户端发送心跳响应信息 userId=" + userId +"时间: "+ LocalDateTime.now());
                         os.flush();
                     } else if ("close".equals(msg)) {
                         System.out.println("[Heartbeat] 收到客户端关闭 userId=" + userId+"时间: "+ LocalDateTime.now());
                         running = false;
                     }
-                    // 其他消息这里忽略：聊天/消息推送都已经由 LegacyPushNotifier 处理
+                    // 这里忽略其他消息：聊天/消息推送都已经由LegacyPushNotifier处理
 
                 } catch (SocketTimeoutException e) {
                     // 超时主动探测
@@ -72,21 +74,28 @@ public class HeartbeatHandler extends Thread {
             }
         } catch (IOException e) {
             // 连接异常，直接退出循环
+            System.out.println("[Heartbeat] 连接异常，直接退出循环 ");
         } finally {
-            System.out.println("[Heartbeat] 结束 userId=" + userId);
+            System.out.println("[Heartbeat] 结束该线程： userId=" + userId);
             //closeQuietly(socket);
             if(socket!=null){
                 try{
                     //将socket长连接关闭。
                     socket.close();
                 } catch (IOException e) {
-                    System.out.println("桌面端socket长连接关闭失败");
-                    throw new RuntimeException(e);
+                    System.out.println("[Heartbeat] 桌面端socket长连接关闭失败:userId=" + userId+ "\n err："+e.getMessage());
+                    //throw new RuntimeException(e);//这里不要抛异常，抛了异常后面的handleDisconnect内容就执行不了了。
                 }
             }
             // 关键：从注册表里移除并广播下线
             if (pushNotifier != null) {
-                pushNotifier.handleDisconnect(userId);
+                try{
+                    pushNotifier.handleDisconnect(userId);
+                } catch (Exception e) {
+                    System.out.println("[Heartbeat] 下线广播失败 userId："+userId+"\n err："+e.getMessage());
+                    //finally 抛异常会屏蔽掉外层 try 的异常
+                    //throw new RuntimeException(e);
+                }
             }
         }
     }

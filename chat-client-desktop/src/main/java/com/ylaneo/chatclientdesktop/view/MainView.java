@@ -1,7 +1,9 @@
 package com.ylaneo.chatclientdesktop.view;
 
+import com.sun.tools.javac.Main;
 import com.ylaneo.chatclientdesktop.facade.UserFacade;
 import com.ylaneo.chatclientdesktop.facade.impl.UserFacadeImpl;
+import com.ylaneo.chatclientdesktop.net.HeartbeatSender;
 import com.ylaneo.chatclientdesktop.session.UserSession;
 import com.ylaneo.chatclientdesktop.view.pages.ContactView;
 import com.ylaneo.chatclientdesktop.view.pages.MessageView;
@@ -10,12 +12,10 @@ import com.ylaneo.chatclientdesktop.view.pages.UserInfoView_1;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDateTime;
 
 public class MainView extends JFrame {
     // ======================================== 组件 ========================================
@@ -68,6 +68,75 @@ public class MainView extends JFrame {
 //            }
 //        });
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);  // 禁用默认退出，自己控制
+        // TODO: 2026/10/1 自定义这个关闭按钮添加停止心跳线程和监听线程的功能
+        this.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                doLogout();
+            }
+
+//            @Override
+//            public void windowClosing(WindowEvent e) {
+//                //弹出提示框，确认后再登出
+//                int confirmDelete=JOptionPane.showConfirmDialog(MainView.this,"确认退出登录吗","确认退出登录窗口",JOptionPane.YES_NO_OPTION);//
+//                if(confirmDelete!=JOptionPane.YES_OPTION){//没有选择确认按钮
+//                    return;
+//                }
+//                UserFacade userFacade=new UserFacadeImpl();
+//                userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
+//                UserSession.getInstance().logout();
+//                //新增：关键！！！！！关闭socket连接，间接结束了推送PushListener线程和心跳线程HeartbeatSender,其实没有结束HeartBeatSender线程
+//                Socket pushSocket = UserSession.getInstance().getPushSocket();
+//                if (pushSocket != null && !pushSocket.isClosed()) {
+//                    try {
+//                        //
+//                        //结束HeartBeatSender线程,使用UserSession拿到这个单例线程？
+//                        UserSession.getInstance().getHeartbeatSender().closeNow();
+//                        //
+//                        pushSocket.close();//直接进行一个socket的关闭
+//                        System.out.println("关闭socket长连接");
+//
+//                    } catch (IOException ex) {
+//                        ex.printStackTrace();
+//                    }
+//                }
+//
+//                //
+//                dispose();//关闭当前窗口
+//            }
+
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+        });
+
         //修改Jframe的默认内容容器为一个Jpanel，方便后面控制，相当于背景板
         JPanel backPanel=new JPanel();
         backPanel.setLayout(new BorderLayout());
@@ -198,29 +267,89 @@ public class MainView extends JFrame {
     }
     // ======================================== 统一进行按钮功能绑定 ========================================
     //退出登录
+//    public void bindButtonActions(){
+//        jButtonLogout.addActionListener(e->{
+//            //弹出提示框，确认后再登出
+//            int confirmDelete=JOptionPane.showConfirmDialog(this,"确认退出登录吗","确认退出登录窗口",JOptionPane.YES_NO_OPTION);//
+//            if(confirmDelete!=JOptionPane.YES_OPTION){//没有选择确认按钮
+//                return;
+//            }
+//            UserFacade userFacade=new UserFacadeImpl();
+//            userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
+//            UserSession.getInstance().logout();
+//            //新增：关键！！！！！关闭socket连接，间接结束了推送PushListener线程和心跳线程HeartbeatSender,其实没有结束HeartBeatSender线程
+//            Socket pushSocket = UserSession.getInstance().getPushSocket();
+//            if (pushSocket != null && !pushSocket.isClosed()) {
+//                try {
+//                    //
+//                    //结束HeartBeatSender线程,使用UserSession拿到这个单例线程？
+//                    UserSession.getInstance().getHeartbeatSender().closeNow();
+//                    try {
+//                        UserSession.getInstance().getHeartbeatSender().join(500);   // 最多等 500ms，**确保线程结束 + 日志已打印**
+//                    } catch (InterruptedException ignored) {
+//                        System.out.println("[InterruptedException-Mainview]");
+//                    }
+//                    //
+//                    pushSocket.close();//直接进行一个socket的关闭
+//                    System.out.println("关闭socket长连接");
+//                } catch (IOException ex) {
+//                    ex.printStackTrace();
+//                }
+//            }
+//
+//            //
+//            dispose();//关闭当前窗口
+//            new LoginView();
+//        });
+//    }
     public void bindButtonActions(){
         jButtonLogout.addActionListener(e->{
-            //弹出提示框，确认后再登出
-            int confirmDelete=JOptionPane.showConfirmDialog(this,"确认退出登录吗","确认退出登录窗口",JOptionPane.YES_NO_OPTION);//
-            if(confirmDelete!=JOptionPane.YES_OPTION){//没有选择确认按钮
-                return;
-            }
-            UserFacade userFacade=new UserFacadeImpl();
-            userFacade.updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
-            UserSession.getInstance().logout();
-            //新增：关键！！！！！关闭socket连接，间接结束了推送PushListener线程和心跳线程HeartbeatSender
-            Socket pushSocket = UserSession.getInstance().getPushSocket();
-            if (pushSocket != null && !pushSocket.isClosed()) {
-                try {
-                    pushSocket.close();//直接进行一个socket的关闭
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            //
-            dispose();//关闭当前窗口
+            doLogout();
             new LoginView();
         });
+    }
+    // ======================================== 全局的函数 ========================================
+    // MainView 类内
+    private void doLogout() {
+        //提示框
+        int confirmDelete = JOptionPane.showConfirmDialog(this, "确认退出登录吗", "确认退出登录窗口", JOptionPane.YES_NO_OPTION);
+        if (confirmDelete != JOptionPane.YES_OPTION) return;
+        //
+        new UserFacadeImpl().updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(), 0);
+        UserSession.getInstance().logout();
+        //拿到心跳线程
+        HeartbeatSender heartbeatSender = UserSession.getInstance().getHeartbeatSender();
+
+        // 2. 关 socket
+        Socket pushSocket = UserSession.getInstance().getPushSocket();
+        if (pushSocket != null && !pushSocket.isClosed()) {
+            try {
+                pushSocket.close();
+                System.out.println("关闭socket长连接");
+                System.out.println("[Mainview]"+(heartbeatSender.isAlive()?"heartbeatSender还是活的":"heartbeatSender死了")+ LocalDateTime.now());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        // 1. 停心跳线程
+
+        System.out.println("[Mainview]"+(heartbeatSender.isAlive()?"heartbeatSender还是活的":"heartbeatSender死了")+ LocalDateTime.now());
+        if (heartbeatSender != null && heartbeatSender.isAlive()) {
+            heartbeatSender.closeNow();
+            try {
+                heartbeatSender.join(500);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        System.out.println("[Mainview]"+(heartbeatSender.isAlive()?"heartbeatSender还是活的":"heartbeatSender死了")+ LocalDateTime.now());
+
+
+        // 3. 关闭窗口 + 开登录页
+        dispose();
+
     }
 }
 

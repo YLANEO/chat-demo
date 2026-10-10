@@ -1,6 +1,7 @@
 package com.ylaneo.chatclientdesktop.session;
 
 import com.ylaneo.chatclientdesktop.entity.User;
+import com.ylaneo.chatclientdesktop.net.HeartbeatSender;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,10 @@ public class UserSession {
     private static UserSession userSession=new UserSession();//无参构造
     private User currentUser;
     private Socket pushSocket;//登陆成功后创建的socket的引用，方便在这里管理
+
+
+
+    private HeartbeatSender heartbeatSender;//当成一个单例来用，这样才能让用户调用到同一个线程，不然就需要new一个，那就是新的线程不是该用户的那个线程了
 
     //这个session包含的方法
     public static UserSession getInstance(){
@@ -46,5 +51,13 @@ public class UserSession {
     public Socket getPushSocket() {
         //
         return pushSocket;
+    }
+    //
+    public HeartbeatSender getHeartbeatSender() {
+        return heartbeatSender;
+    }
+
+    public void setHeartbeatSender(HeartbeatSender heartbeatSender) {
+        this.heartbeatSender = heartbeatSender;
     }
 }

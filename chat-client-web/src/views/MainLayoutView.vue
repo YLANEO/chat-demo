@@ -51,10 +51,6 @@ const handleCommand = (command) => {
 <div class="layout-wrapper">
   <!-- 左侧导航栏 -->
   <aside class="glass-sidebar">
-    <!-- Logo 区域 -->
-    <!-- <div class="sidebar-logo">
-            <img src="@/assets/hi.png" alt="logo" class="logo-img" />
-        </div> -->
     <!-- 导航菜单 -->
     <el-menu active-text-color="var(--theme-accent)" text-color="var(--theme-text)" :default-active="route.path" class="glass-menu" router>
       <!-- 聊天页面 -->
@@ -179,24 +175,9 @@ const handleCommand = (command) => {
   overflow: hidden;
 }
 
-.sidebar-logo {
-  height: 130px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid var(--theme-border);
-
-  .logo-img {
-    width: 180px;
-    height: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 0 12px var(--theme-glow));
-    transition: filter 0.6s ease;
-  }
-}
 
 /* ============================
-  毛玻璃菜单（穿透 Element Plus）
+  菜单（穿透 Element Plus）
    ============================ */
 .glass-menu {
   flex: 1;
@@ -286,7 +267,7 @@ const handleCommand = (command) => {
 }
 
 /* ============================
-  毛玻璃顶栏
+  顶栏
    ============================ */
 .glass-header {
   height: 64px;
@@ -393,14 +374,14 @@ const handleCommand = (command) => {
   border: 0px solid var(--theme-border);
   // transition: border-color 0.3s ease;
 
-  &:hover {
-    border-color: var(--theme-accent);
+  // &:hover {
+  //   border-color: var(--theme-accent);
 
-    .avatar-glow {
-      opacity: 1;
-      transform: scale(1.2);
-    }
-  }
+  //   .avatar-glow {
+  //     opacity: 1;
+  //     transform: scale(1.2);
+  //   }
+  // }
 }
 
 .avatar {
@@ -411,18 +392,8 @@ const handleCommand = (command) => {
   object-fit: cover;
 }
 
-.avatar-glow {
-  position: absolute;
-  inset: -4px;
-  border-radius: 5px;
-  background: radial-gradient(circle, var(--theme-glow), transparent 70%);
-  opacity: 0;
-  transform: scale(1);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
-}
 
-/* 下拉菜单毛玻璃（穿透 Element Plus） */
+/* 下拉菜单（穿透 Element Plus） */
 .glass-dropdown {
   background: var(--theme-dropdown-bg) !important;
   backdrop-filter: blur(20px);

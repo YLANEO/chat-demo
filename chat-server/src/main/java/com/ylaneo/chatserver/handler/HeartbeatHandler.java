@@ -45,6 +45,7 @@ public class HeartbeatHandler extends Thread {
                     if ("ping".equals(msg)) {
                         System.out.println("收到客户端用户id: "+userId+" 的心跳消息：ping ");
                         os.write("pong".getBytes());
+                        System.out.println("");
                         os.flush();
                     } else if ("close".equals(msg)) {
                         //客户端主动关闭

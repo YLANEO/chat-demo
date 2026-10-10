@@ -17,7 +17,7 @@ const routes: RouteRecordRaw[] = [
     //子路由
     children: [
       { path: '', redirect: '/main/chat' },
-      { path: 'home', name: 'Home', component: () => import('@/views/HomeView.vue') },
+      // { path: 'home', name: 'Home', component: () => import('@/views/HomeView.vue') },
       { path: 'friends', name: 'Friends', component: () => import('@/views/FriendsView.vue') },
       { path: 'chat', name: 'Chat', meta: { title: '聊天页面', icon: 'chat' }, component: () => import('@/views/ChatView.vue') },
       // { path: 'profile', name: 'Profile', component: () => import('@/views/ProfileView.vue') },
@@ -46,7 +46,9 @@ const router = createRouter({
 // })
 
 //to表示即将访问的路由，from表示从哪个路由访问的。其实没有用到from，但是先写上。
-router.beforeEach((to, from) => {
+// router.beforeEach((to, from) => {
+router.beforeEach((to) => {
+
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     //这里的return其实是原来废弃的next()的替代，所以直接return即可。

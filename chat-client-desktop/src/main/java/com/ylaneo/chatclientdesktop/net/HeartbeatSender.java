@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 //心跳机制线程，running为false时就结束该线程
 public class HeartbeatSender extends Thread {
     private Socket socket;
+    //这里的volatile暂时没有用到，但是预计会在增加主页面退出时触发关闭这个线程的功能中用到。
     private volatile boolean running = true;
 
     public HeartbeatSender(Socket socket) {
@@ -18,21 +19,32 @@ public class HeartbeatSender extends Thread {
     public void run() {
         while (running) {
             try {
-                Thread.sleep(30000);// 每30秒发送一次心跳
+                Thread.sleep(30000);// 每30秒发送一次心跳，但是会阻塞，也就会让这个running标志位失效。
                 //这里也有问题：这里采用的是轮询检测socket有没有断开连接，可能还没来得及执行这个if判断语句就关闭窗口了，可能导致这个线程还没有结束？吗？
                 if (socket.isClosed()) {//在Mainview中关闭了socket连接之后，这个线程也就结束了
-                    System.out.println("HeartbeatSender线程结束 ");
+                    System.out.println("111 HeartbeatSender线程结束 "+"时间: "+ LocalDateTime.now());
                     break;
                 }
-
+                //发送ping消息
                 socket.getOutputStream().write("ping".getBytes());//发送心跳，
                 socket.getOutputStream().flush();
                 System.out.println("向服务端发送心跳：ping "+"时间: "+ LocalDateTime.now());
             } catch (InterruptedException e) {
-                break;
+                // closeNow() 调用 interrupt() 就会从这里出去
+                System.out.println("[HeartBeatSender][InterruptedException] HeartbeatSender 被 interrupt，线程结束 " + LocalDateTime.now());
+                break;//退出循环
             } catch (IOException e) {
                 running = false;// 连接异常，停止心跳
+                System.out.println("[IOException] HeartbeatSender 被 interrupt，线程结束 " + LocalDateTime.now());
             }
         }
+    }
+    //需要一个暴露给外部调用的函数，用于打断这个30秒的等待时间，
+    public void closeNow() {
+        // TODO: 2026/10/7 结束这个线程，并给出这个线程结束的提示
+        //socket.close();//这里不需要这个socket在别的地方关闭了
+        this.interrupt();
+        running = false;
+        System.out.println("222 HeartbeatSender线程结束 "+"时间: "+ LocalDateTime.now());
     }
 }

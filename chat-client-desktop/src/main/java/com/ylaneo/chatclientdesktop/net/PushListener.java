@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.awt.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 //获取服务端来的推送信息，进行信息更新
@@ -73,7 +74,7 @@ public class PushListener implements Runnable {
             }
             System.out.println("线程PushListener结束");
         } catch (IOException e) {
-            System.out.println("检测到推送socket连接断开，结束PushListener线程 : " + e.getMessage());
+            System.out.println("检测到推送socket连接断开，结束PushListener线程 : " + e.getMessage()+"时间： "+ LocalDateTime.now());
         }
     }
     //根据服务端的信息，更新好友在线状态

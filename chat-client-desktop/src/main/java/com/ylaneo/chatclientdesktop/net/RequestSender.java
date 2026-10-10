@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.LocalDateTime;
 
 /* 如果要方便进行socket的长连接管理，可以再新建一个clientConnection类专门管理socke管理，但是暂时用不到，之后要用再添加 */
 //用来进行socket的建立和断开，并发送不同的请求，各种请求都应该在这里进行发送
@@ -47,7 +48,7 @@ public class RequestSender {
 
         //关闭socket连接，因此：这里面的socket连接是短连接
         socket.close();
-        System.out.println("关闭socket短连接");
+        System.out.println("关闭socket短连接 时间： "+ LocalDateTime.now());
 
         //返回收到的数据
         //return new String(buffer);//转换成String之后返回

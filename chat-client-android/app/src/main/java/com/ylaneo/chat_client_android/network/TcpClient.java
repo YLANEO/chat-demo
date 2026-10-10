@@ -7,6 +7,7 @@ import com.ylaneo.chat_client_android.util.Constants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -37,6 +38,7 @@ public class TcpClient {
         this.port = Constants.SERVER_PORT;//请求的后端端口：20001，
     }
 
+    //依旧使用DCL进行单例方法创建
     public static TcpClient getInstance() {
         if (instance == null) {
             //同步？
@@ -71,7 +73,8 @@ public class TcpClient {
         try {
             Log.d(TAG, "连接服务器 " + host + ":" + port);
             //创建socket对象用于和服务端通信，tcp协议
-            socket = new Socket(host, port);
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(host, port), 5000);//设置5秒连接超时，否则连接超时时间会取决于TCP重传策略，常见的是75秒到几分钟
             socket.setSoTimeout(10000); // 10 秒读超时，避免卡死
             //将输入输出流对象与socket对象绑定
             is = socket.getInputStream();

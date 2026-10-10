@@ -57,7 +57,7 @@ public class LegacyPushNotifier {
         pushTo(userId, legacyMessage, null);
     }
 
-     //给单个用户推送消息，同时通知 web 端和 swing 端。
+     // 同时给web端和桌面端的单个用户推送消息。
     public void pushTo(Integer userId, String legacyMessage, Object webJsonContent) {
         // 1) WebSocket 推送（web 端）
         if (webJsonContent != null) {

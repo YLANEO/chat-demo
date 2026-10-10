@@ -16,7 +16,7 @@ import java.util.List;
 public class ProtocolUtil {
 
     /**
-     * 解析服务器响应为字段列表
+     * 解析服务器响应为字段(参数)列表
      *
      * 原始格式示例：
      *   "<0><登录成功><123>"
@@ -50,6 +50,7 @@ public class ProtocolUtil {
     }
 
     /**
+     * 相当于Result
      * 把响应解析成 Result<String[]>，code=0 表示成功
      */
     public static class ParsedResponse {
@@ -57,6 +58,7 @@ public class ProtocolUtil {
         public final String message;
         public final List<String> data; // 第三个字段开始的所有业务数据
 
+        //构造函数，与桌面端不同，没有固定死失败与成功的code的值，而是使用这个构造函数自己定义要返回的code的值
         public ParsedResponse(int code, String message, List<String> data) {
             this.code = code;
             this.message = message;
@@ -69,9 +71,12 @@ public class ProtocolUtil {
     }
 
     /**
+     * 先解析成参数列表的形式，再将这些参数封装到ParsedResponse对象中。
      * 解析标准响应：<code><message><...data>
+     * 解析带箭头的返回数据，将其解析成多个参数
      */
     public static ParsedResponse parseResponse(String response) {
+        //调用上面的解析方法，解析成列表
         List<String> params = parse(response);
         if (params.size() < 2) {
             return new ParsedResponse(-1, "响应格式错误", new ArrayList<>());
@@ -83,6 +88,7 @@ public class ProtocolUtil {
             return new ParsedResponse(-1, "响应 code 解析失败", new ArrayList<>());
         }
         String message = params.get(1);
+        //将对象响应数据封装到data中
         List<String> data = new ArrayList<>();
         if (params.size() > 2) {
             data.addAll(params.subList(2, params.size()));

@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import * as sassEmbedded from 'sass-embedded'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,6 +16,29 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+
+  // 依赖预构建：显式列出常用依赖，避免 Vite 启动时自动扫描
+  optimizeDeps: {
+    include: [
+      'vue',
+      'pinia',
+      'vue-router',
+      'axios',
+      'element-plus',
+      '@element-plus/icons-vue',
+    ],
+  },
+
+  // SCSS编译配置：使用sass-embedded（Rust实现，比Dart Sass快3-5倍）
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        implementation: sassEmbedded,//使用sass-embedded编译scss，关键提速
+        silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin'],
+      },
     },
   },
 

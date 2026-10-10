@@ -14,6 +14,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -131,7 +133,12 @@ public class LoginView extends JFrame {
                     UserSession.getInstance().setPushSocket(pushSocket);
                     //将这个socket对象作为参数，创建两个线程
                     new Thread(new PushListener(pushSocket)).start();//
-                    new Thread(new HeartbeatSender(pushSocket)).start();//
+//                    new Thread(new HeartbeatSender(pushSocket)).start();//
+                    HeartbeatSender heartbeatSender=new HeartbeatSender(pushSocket);
+//                    new Thread(heartbeatSender).start();//这里完全不对！！！根本就没有正确启动？？？
+                    heartbeatSender.start();//这样才对
+                    //这里将HeartbeatSender存进去是为了能够在退出登录时能够调用到这个用户的这个线程，单例吗？？
+                    UserSession.getInstance().setHeartbeatSender(heartbeatSender);
                     System.out.println("推送连接建立成功");
                 } catch (IOException ex) {
                     System.out.println("推送连接建立失败: " + ex.getMessage());
