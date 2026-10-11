@@ -53,30 +53,36 @@ public class PushListener implements Runnable {
             while (true) {//这里在循环，因为是长连接，和服务端的serverThread（短连接，调用时运行完一次就结束线程）对比来看。和服务端的server中的while循环是一样的。
                 int len = is.read(buffer);//如果没有数据就挂起线程，变成阻塞状态。有数据就读取服务端的推送数据到buffer中
                 if (len <= 0) {
-                    System.out.println("线程PushListener的while循环结束");
+                    System.out.println("[PushListener]线程PushListener的while循环结束");
                     break;//socket连接关闭后（MainView中），这里就会触发，这个线程也就会结束了。
                 }
 
 
                 String msg = new String(buffer, 0, len).trim();
-                System.out.println("收到服务端的推送消息："+msg);//记录到终端
+                System.out.println("[PushListener]收到服务端的推送消息："+msg);//记录到终端
 
-                //收到服务端心跳ping，返回响应信息pong
+                //收到服务端心跳ping，返回响应信息pong,不走handlePush函数
                 if ("ping".equals(msg)) {
-                    //响应服务端的探测心跳
-                    socket.getOutputStream().write("pong".getBytes());
-                    socket.getOutputStream().flush();
-                    System.out.println("收到服务端发送的心跳信息：ping。发送回响应信息：pong ");
+                    handlePing();//抽出去，这里直接调用
                     continue;
                 }
 
                 handlePush(msg);//处理接受到的推送信息
             }
-            System.out.println("线程PushListener结束");
+            System.out.println("[PushListener]线程PushListener结束");
         } catch (IOException e) {
-            System.out.println("检测到推送socket连接断开，结束PushListener线程 : " + e.getMessage()+"时间： "+ LocalDateTime.now());
+            System.out.println("[PushListener]检测到推送socket连接断开，结束PushListener线程 : " + e.getMessage()+"时间： "+ LocalDateTime.now());
         }
     }
+
+    //把处理ping信息的功能抽出来
+    private void handlePing() throws IOException {
+        //响应服务端的探测心跳
+        socket.getOutputStream().write("pong".getBytes());
+        socket.getOutputStream().flush();
+        System.out.println("[PushListener]收到服务端发送的心跳信息：ping。发送回响应信息：pong ");
+    }
+
     //根据服务端的信息，更新好友在线状态
     private void handlePush(String msg) {
         if(msg.startsWith("<push><statusUpdate>")){

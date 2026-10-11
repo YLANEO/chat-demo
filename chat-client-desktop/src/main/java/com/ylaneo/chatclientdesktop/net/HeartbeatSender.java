@@ -28,14 +28,14 @@ public class HeartbeatSender extends Thread {
                 //发送ping消息
                 socket.getOutputStream().write("ping".getBytes());//发送心跳，
                 socket.getOutputStream().flush();
-                System.out.println("向服务端发送心跳：ping "+"时间: "+ LocalDateTime.now());
+                System.out.println("[HeartBeatSender]向服务端发送心跳：ping "+"时间: "+ LocalDateTime.now());
             } catch (InterruptedException e) {
                 // closeNow() 调用 interrupt() 就会从这里出去
                 System.out.println("[HeartBeatSender][InterruptedException] HeartbeatSender 被 interrupt，线程结束 " + LocalDateTime.now());
                 break;//退出循环
             } catch (IOException e) {
                 running = false;// 连接异常，停止心跳
-                System.out.println("[IOException] HeartbeatSender 被 interrupt，线程结束 " + LocalDateTime.now());
+                System.out.println("[HeartBeatSender][IOException] HeartbeatSender 被 interrupt，线程结束 " + LocalDateTime.now());
             }
         }
     }
