@@ -338,6 +338,7 @@ public class MainView extends JFrame {
         if (heartbeatSender != null && heartbeatSender.isAlive()) {
             heartbeatSender.closeNow();
             try {
+                //让心跳线程阻塞500毫秒
                 heartbeatSender.join(500);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();

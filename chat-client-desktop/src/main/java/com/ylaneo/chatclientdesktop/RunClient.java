@@ -23,6 +23,7 @@ public class RunClient {
                 if(UserSession.getInstance().getCurrentUser()!=null){
                     //更新用户在线状态
                     new UserFacadeImpl().updateUserStatus(UserSession.getInstance().getCurrentUser().getUserid(),0);
+
                 }
             }catch (Exception ignored){
                 //shutdown 钩子里面不要抛异常，也不能阻塞太久，JVM只给几秒的时间，超时会直接被杀？
