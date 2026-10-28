@@ -135,6 +135,34 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<!--
+				LoadTest 是"手工启动的压测器"，不是单元测试。
+				它的 main 方法会建立大量 socket 连接并持续压测服务端，
+				如果被 Surefire 当作测试类扫描，mvn test 会直接把服务打挂。
+				这里把它排除掉。
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>**/LoadTest.java</exclude>
+						<exclude>**/perf/**</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+<!--				<version>3.1.0</version>-->
+				<configuration>
+					<mainClass>com.ylaneo.chatserverweb.perf.LoadTest</mainClass>
+					<classpathScope>test</classpathScope>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
